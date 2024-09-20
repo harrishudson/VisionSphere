@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- VisionShpere Snapshot.  Copyright (c) 2024 Harris Hudson  harris@harrishudson.com -->
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320">
+ <style>
+.brand {
+ font-family: Arial, Helvetica, sans-serif;
+ fill: dodgerblue;
+ stroke: black;
+ stroke-width: 0.5px;
+ font-size: 60px;
+}
+ </style>
+ <rect x="0" y="0" width="480" height="320" fill="#EEEEEE" stroke="dodgerblue" stroke-width="1"/>
+ <text x="50" y="170" class="brand">VisionSphere</text>
+</svg>
