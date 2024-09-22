@@ -64,18 +64,18 @@ tab in the Imager;
 </ul>
 
 You can select the above mentioned OS version in the Raspberry Pi Imager by
-selecting; <br/><br/>
+selecting; <br><br>
 <span class="mono"><em>CHOOSE OS</em></span> &rarr; 
 <span class="mono"><em>Raspberry Pi OS (other)</em></span> &rarr; 
 <span class="mono"><em>Raspberry Pi OS (Legacy, 32bit) Lite.</em></span>
 
-<br/><br/>
+<br><br>
 However, the instructions contained in this page do not assume you have used the Raspberry Pi Imager and
 cater for the case that you have done a full manual configuration and burn of your OS image to your 
 micro SD card.  This is because, there may be cases such as the need to configure multiple, or 
 password-less, wifi networks using a headless setup for your Pi.  In which case the Raspberry Pi 
 Imager may not be suited.
-<br/><br/>
+<br><br>
 In such cases, if you will be doing a full manual burn of your OS image, please refer to 
 <a href="#appendix-1">Appendix 1 - Manual Headless Setup</a> section below.
 Some of the continued instructions below will assume you have done a full manual burn of your 
@@ -89,12 +89,12 @@ it using your favourite ssh client (such as <b>putty</b>).  You may need to down
 putty application if you have not connected to a Pi previously.  If you have used the 
 Raspberry Pi Imager and preconfigured the hostname and ssh access, you should be able to 
 ssh to that hostname.
-<br/><br/>
+<br><br>
 If you have done a manual burn of your OS to the Pi micro SD card, and not preconfigured a hostname,
 then try to connect to a hostname called <span class="mono"><b>raspberrypi</b></span>.  You may need to 
 check your router admin web portal to verify your Pi has connected to your local wifi network if 
 you have trouble here.
-<br/><br/>
+<br><br>
 Once logged on, by entering your username and password, you should have the 
 familiar <span class="mono" style="color:blue;">$_</span> terminal prompt displayed.
 </p>
@@ -108,9 +108,9 @@ of your Raspberry Pi OS.
 
 Once logged on to your Pi, issue the following command at the 
  <span class="mono" style="color:blue;">$_</span> prompt;
-<br/><br/>
+<br><br>
 <span class="mono"><span style="color:blue;">$ </span>sudo raspi-config</span>
-<br/><br/>
+<br><br>
 This will present the raspi-config administration menu that can be navigated using the
 arrows, tab and return keys.
 <dl>
@@ -126,9 +126,9 @@ arrows, tab and return keys.
  </dd>
 </dl>
 If you didn't reboot as part of exiting raspi-config, reboot your Pi;
-<br/><br/>
+<br><br>
 <span class="mono"><span style="color:blue;">$ </span>sudo reboot</span>
-<br/><br/>
+<br><br>
 Wait 1 minute then reconnect to your Pi using the new hostname.
 
 <h4>Install dependent packages</h4>
@@ -136,21 +136,23 @@ This application requires use of the <b>ffmpeg</b> video processing
 facility and the <b>speedtest-cli</b> network speed test facility.
 These may not already be installed on your OS.  To install these facilities,
 issue the following commands;
-<br/><br/>
+<br><br>
+<span class="mono"><span style="color:blue;">$ </span>sudo apt-get update</span>
+<br>
 <span class="mono"><span style="color:blue;">$ </span>sudo apt install ffmpeg -y</span>
-<br/>
+<br>
 <span class="mono"><span style="color:blue;">$ </span>sudo apt install speedtest-cli</span>
-<br/>
+<br>
 
 <h4>Install client side programs for this application</h4>
 
 Using whichever method you are comfortable with (such as <b>git clone</b>, <b>wget</b> or <b>secure copy</b>),
 copy all the files from the code base repository <span class="mono"><b>client</b></span> subdirectory to your 
 Raspberry Pi.  If you have never copied files to a Raspberry Pi before - consider to use the <b>secure copy</b>
-or <b>scp</b> facility that comes with <b>putty</b>.<br/><br/>
-Eg, copy the files from this location to your Raspberry Pi home directory;<br/><br/>
+or <b>scp</b> facility that comes with <b>putty</b>.<br><br>
+Eg, copy the files from this location to your Raspberry Pi home directory;<br><br>
 <span class="mono"><em>https://github.com/harrishudson/VisionSphere</em> &rarr; 
-<em>client</em></span><br/><br/>
+<em>client</em></span><br><br>
 These are the files that should be copied to your Pi;
 <ul class="links mono" style="font-size: smaller;">
  <li>bomb.py</li>
@@ -175,12 +177,12 @@ is recommended.  Watchdog can monitor and automatically reboot your Pi should it
 have become locked up without the need to power cycle it.  Assumming you have installed
 the operating system version above, follow these steps to setup watchdog;
 
-<br/><br/>Edit the system.conf file as a superuser using your favourite text editor.
+<br><br>Edit the system.conf file as a superuser using your favourite text editor.
 In the example below, the <b>vi</b> editor is used;
 
-<br/><br/>
+<br><br>
 <span class="mono"><span style="color:blue;">$ </span>sudo vi /etc/systemd/system.conf</span>
-<br/>
+<br>
 
 <dl>
  <dt>Uncomment line 29 and change to;</dt>
@@ -189,12 +191,12 @@ In the example below, the <b>vi</b> editor is used;
  <dd><span class="mono">RebootWatchdogSec=10min</span></dd>
 </dl>
 
-Save the file, then issue;<br/><br/>
+Save the file, then issue;<br><br>
 
 <span class="mono"><span style="color:blue;">$ </span>sudo systemctl daemon-reload</span>
-<br/>
+<br>
 <span class="mono"><span style="color:blue;">$ </span>sudo reboot</span>
-<br/><br/>
+<br><br>
 Now, once your Pi reboots, the watchdog daemon should be configured correctly to monitor 
 and automatically reboot your Pi should it become locked up.  To test this watchdog facility, 
 refer to the <span class="mono">bomb.py</span> test program under 
@@ -208,7 +210,7 @@ Raspberry Pi client,
 you will need to edit and configure this file accordingly.  Use a text editor to make changes to 
 this file.  The initial (unconfigured) <span class="mono">config.ini</span> is as follows;
 
-<br/><br/>
+<br><br>
  config.ini
  <pre class="terminal" >
 [SERVER]
@@ -235,7 +237,7 @@ DELAY = 60
 [NETWORK]
 INTERFACE = wlan0 </pre>
 
-<br/><br/>
+<br><br>
 Make the following changes as required;
 <ul>
  <li>[SERVER]
@@ -254,25 +256,25 @@ Make the following changes as required;
         https://mydomain123.au/my_beach_house_cams.
        FULL_BASE_URL values are referred to as a SYSTEM.  Multiple Raspberry Pi client cameras
        may use the same SYSTEM.
-       <br/><br/>
+       <br><br>
        An example of a FULL_BASE_URL that represents an endpoint or install SYSTEM is;
-       <br/><br/>
+       <br><br>
        FULL_BASE_URL = <span class="result">https://mydomain123.au/my_beach_house_cams</span>
-       <br/><br/>
+       <br><br>
    </dd>
    <dt>AUTH_KEY *</dt>
    <dd>This is a mandatory required setting.  This should be the free text value of
        the authentication key that has been setup on the server endpoint that this
        camera will use.  Note; this is not the hash value - it needs to be the free
        text value.  Also, do not enclose the value in double quotes.
-       <br/><br/>
+       <br><br>
        For example suppose you have decided on an AUTH KEY or password of;
         <span class="result">MySecretPassword0123</span>
-       <br/><br/>
+       <br><br>
        Then the value to place here is;
-       <br/><br/>
+       <br><br>
        AUTH_KEY = <span class="result">MySecretPassword0123</span>
-       <br/><br/>
+       <br><br>
        <em>Note: Please use your own AUTH KEY / password and do not copy these examples.</em>
    </dd>
   </dl>
@@ -286,11 +288,11 @@ Make the following changes as required;
        Note that for a given SYSTEM, Camera Names need to be unique for each Raspberry Pi
        camera.  If this value is provided, it will override the Raspberry Pi hostname for 
        the Camera Name.  Do not enclose this value in double quotes.
-       <br/><br/>
+       <br><br>
        For example, this is a possible camera name;
-       <br/><br/>
+       <br><br>
        NAME = <span class="result">Front Door</span>
-       <br/><br/>
+       <br><br>
    </dd>
    <dt>IMAGE_SIZE_WIDTH &amp; IMAGE_SIZE_HEIGHT</dt>
    <dd>These values specify the capture image dimensions in pixels.  These values can
@@ -298,36 +300,36 @@ Make the following changes as required;
        which is discussed further in <a href="#appendix-2">Appendix 2 - Auxiliary client programs</a> 
        can be used to list the available resolutions for the camera connected to your Pi.
        In most cases it is recommended to leave these values as the default setting (640 x 480).
-       <br/><br/>
+       <br><br>
        <em>Note: Increasing these values too large, along with some other parameters here, may
         result in imagery filesizes that are too large and may be rejected by your, or any subscribers,
         email servers.</em>
-       <br/><br/>
+       <br><br>
    </dd>
    <dt>IMAGE_ROTATION</dt>
    <dd>This is an optional setting.  Default value is 0.  Valid values are; 0, 1, 2 and 3.  This can 
        be used to rotate captured still and video imagery accordingly dependent upon how you have 
        oriented your Raspberry Pi Camera.
-       <br/><br/>
+       <br><br>
    <dt>MOTION_FRAMES_PER_SECOND</dt>
    <dd>This is the frame rate (frames per second) video capture rate that will be requested of
        your camera.  The default value is 10.  This can be increased or decreased accordingly.
-       <br/><br/>
+       <br><br>
        <em>Note: Increasing this value too large, along with some other parameters here, may
         result in imagery filesizes that are too large and may be rejected by your, or any subscribers,
         email servers.</em>
-       <br/><br/>
+       <br><br>
    </dd>
    <dt>MOTION_RECORD_SECONDS</dt>
    <dd>This is the approximate duration in seconds a video will be recorded for a detected motion.
        This is an approximate time as the time of detecting the motion is also added to
        any recorded video.  This has a default value of 7 seconds.  This value can be increased
        or decreased accordingly.
-       <br/><br/>
+       <br><br>
        <em>Note: Increasing this value too large, along with some other parameters here, may
         result in imagery filesizes that are too large and may be rejected by your, or any subscribers,
         email servers.</em>
-       <br/><br/>
+       <br><br>
    <dt>MOTION_DIFF_FRAMES</dt>
    <dd>For motion to be detected, there must be this value + 1 consecutive frames
        from the image stream that differ by, at least, the Image Noise Threshold setting.
@@ -337,20 +339,20 @@ Make the following changes as required;
        value.  However, if your camera is experiencing false motion detection's from short
        transient flashes in light, you may wish to tune/adjust this value.  If necessary
        to change this value, It is recommended to do so in small increments.
-       <br/><br/>
+       <br><br>
    <dt>MOTION_DEFAULT_NOISE_THRESHOLD</dt>
    <dd>This is the default motion detect noise setting the camera will initially be started at.
        As soon as any subscriber has set or updated this Camera configuration, this value will
        not be used.  It is simply the initial startup setting until a subscriber updates it
        by setting the configuration for this Camera.
-       <br/><br/></dd>
+       <br><br></dd>
    <dt>MOTION_DEFAULT_WIND_STOP</dt>
    <dd>This is the default motion detect wind or gust kmh stop setting.  If a BOM weather station
        has been defined, this will be the default "Wind Stop" setting.  This value is only used at
        initial startup by the Camera.  As soon as any subscriber has set or updated this Camera 
        configuration, this value will not be used.  It is simply the initial startup setting until 
        a subscriber updates it by setting the configuration for this Camera.
-       <br/><br/></dd>
+       <br><br></dd>
    <dt>DELAY</dt>
    <dd>This has a default value of 60.  This is the number of seconds the Camera will sleep after
        it has detected, and processed, an image motion.  This number can be increased or
@@ -358,7 +360,7 @@ Make the following changes as required;
        of motion detect emails in a short time period should the Camera settings be overly 
        sensitive or generally poorly configured.  Generally, a subsequent motion detect email 
        will not be sent until this period of time has elapsed since a detected motion.
-       <br/><br/></dd>
+       <br><br></dd>
   </dl>
  </li>
  <li>[NETWORK]
@@ -380,20 +382,20 @@ Make the following changes as required;
 One of the final steps is to configure your Pi crontab entry.  If you are unfamiliar, cron
 is the Linux job scheduler and a crontab file is provided in the code base.  
 Issue the following commands;
-<br/><br/>
+<br><br>
 <span class="mono"><span style="color:blue;">$ </span>chmod +x motion_restarter.sh</span>
-<br/>
+<br>
 <span class="mono"><span style="color:blue;">$ </span>crontab &lt; crontab.l</span>
-<br/><br/>
+<br><br>
 The Pi crontab should now be as follows;
-<br/><br/>
+<br><br>
  crontab.l
  <pre class="terminal" >
 */5 * * * * /usr/bin/python fetchconfig.py &gt;/dev/null 2&gt;/dev/null &amp;
 53 * * * * /usr/bin/python ping_reboot.py &gt;/dev/null 2&gt;/dev/null &amp;
 0 6 * * 0 /usr/bin/sudo /sbin/reboot &gt;/dev/null 2&gt;/dev/null &amp;
 @reboot $HOME/motion_restarter.sh &gt;/dev/null 2&gt;/dev/null &amp;</pre>
-<br/>
+<br>
 A line-by-line description of this crontab is;
 <ol>
  <li>Every 5 minutes the Pi will request a camera configuration payload from the server.</li>
@@ -418,12 +420,12 @@ A line-by-line description of this crontab is;
 This concludes the general setup of a client Raspberry Pi configured for motion detection.
 The final step is to reboot the Pi and then future control would be from the received emails
 and web portal for this application.  Issue the following command;
-<br/><br/>
+<br><br>
 <span class="mono"><span style="color:blue;">$ </span>sudo reboot</span>
-<br/><br/>
+<br><br>
 </p>
 
-<hr/>
+<hr>
 
 
 <h4>Appendix 1 - Manual Headless Setup</h4>
@@ -434,17 +436,17 @@ perhaps less commonly used now with the introduction of the <b>Raspberry Pi Imag
 However, there may be some cases where the Raspberry Pi Imager is perhaps not suited,
 so it is described here.  Instructions here are very brief and you may need to consult
 other resources if you require more detail.
-<br/><br/>
+<br><br>
 Download a Raspberry Pi OS (Legacy) Lite image.
-<br/><br/>
+<br><br>
 Eg; 2024-07-04-raspios-bullseye-armhf-lite.img.xz
-<br/><br/>
+<br><br>
 You may need to uncompress this archive to work with a traditional Imager. 7-Zip can uncompress such .xz files.
-<br/><br/>
+<br><br>
 You should now have; 2024-07-04-raspios-bullseye-armhf-lite.img
-<br/><br/>
+<br><br>
 Use a traditional Imager (such as Win32DiskImager etc) to burn this image to your micro SD card
-<br/><br/>
+<br><br>
 You now need to create 3 files and copy them to the root directory of your SD card;
 <ol>
  <li><span class="mono">wpa_supplicant.conf</span> - <em>To Specify your Wifi credentials</em></li>
@@ -478,7 +480,7 @@ these with your Wifi SSID name and Wifi password respectively.  The second
  <span class="mono">network</span> entry will
 allow your Pi to connect to password-less Wifi networks should that be available - if you do not want 
 that then remove that second <span class="mono">network</span> entry in its entirety.
-<br/><br/>
+<br><br>
 For example; suppose your Wifi network SSID is <span style="color:blue">Batman</span> and your
 Wifi network password is <span style="color:blue">Robin</span> and you <b>do not</b> wish your
 Pi to connect to password-less Wifi networks, then your <span class="mono">wpa_supplicant.conf</span>
@@ -504,7 +506,7 @@ the password hash for that username.  Raspberry Pi OS traditionally use a userna
 So, all that is needed is to generate a password hash.  You can generate a password
 hash using the <a href="hash.php">Hash Generator</a> or using a Linux command if you
 already have access to another Linux system.
-<br/><br/>
+<br><br>
 Suppose you decide to use a password; <span class="result">MySecretPiPassword0123</span>, 
 then by using the Hash Generator,
 you if you enter that password, then a possible "Linux Crypt Hash" of that password is; 
@@ -516,19 +518,19 @@ if you did that, you would then create a <span class="mono">userconf.txt</span> 
 pi:ZQ1hwVH78F09Q</pre>
 Using a text editor, create an appropriate <span class="mono">userconf.txt</span> file and
 then copy that to the root directory of your SD card.
-<br/><br/>
+<br><br>
 Alternatively, if you already have access to another Linux system here is an example command you
 could use to also generate a password hash;
-<br/><br/>
+<br><br>
 <span class="mono"><span style="color:blue;">$ </span> echo 'MySecretPiPassword0123' | openssl passwd -stdin</span>
-<br/><br/>
+<br><br>
 <em>Note: Please use your own password and do not copy these examples.</em>
 
 <h5>ssh</h5>
 In order to permit or enable ssh login access on your Pi, you need to create an empty file called
 <span class="mono">ssh</span> without any filename extension and then copy that empty file to
 your root directory of your SD card
-<br/><br/>
+<br><br>
 This concludes the Headless build.  Once you have completed the above steps by burning the image and
 copying these three files, you can then eject your SD card and insert it in to your Pi.  Power up
 your Pi then wait 1 minute for it to boot, then attempt to ssh (login) to your Pi by connecting
@@ -550,7 +552,7 @@ script, wait for your Pi to crash, then wait another minute for it to reboot, th
 can log back in successfully.  If you can log back in without the need to power cycle your Pi,
 this is an indicator that <span class="mono">watchdog</span> is probably configured and working correctly.
 Eg;
-<br/><br/>
+<br><br>
 <span class="mono"><span style="color:blue;">$ </span> python bomb.py >/dev/null 2>/dev/null &</span>
 
 <h5>resolutions.py</h5>
@@ -558,9 +560,9 @@ This python script is provided to simply list the Camera resolution sizes availa
 This may be useful if you will be modifying the IMAGE_SIZE_WIDTH  and IMAGE_SIZE_HEIGHT
 configuration parameters.  So you can be sure you are using a valid supported camera image size.
 Eg, to list camera resolution sizes available on your Pi, run;
-<br/><br/>
+<br><br>
 <span class="mono"><span style="color:blue;">$ </span> python resolutions.py</span>
-<br/><br/>
+<br><br>
 <em>Note: you may need to make sure the motion detection is not running when executing 
 <span class="mono">resoltuions.py</span> and temporarily disable your crontab entries.</em>
 </p>
