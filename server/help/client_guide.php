@@ -219,17 +219,17 @@ AUTH_KEY =
 
 [CAMERA]
 NAME = 
-IMAGE_SIZE_WIDTH = 640
-IMAGE_SIZE_HEIGHT = 480
+IMAGE_SIZE_WIDTH = 1640
+IMAGE_SIZE_HEIGHT = 1232
 IMAGE_ROTATION = 0
 # Image ROTATION possible values;
 # 0: No rotation
 # 1: 90 degrees clockwise
 # 2: 180 degrees
 # 3: 270 degrees (90 degrees counter-clockwise)
-MOTION_FRAMES_PER_SECOND = 10
-MOTION_RECORD_SECONDS = 7
-MOTION_DIFF_FRAMES = 2
+MOTION_FRAMES_PER_SECOND = 5
+MOTION_RECORD_SECONDS = 5
+MOTION_DIFF_FRAMES = 3
 MOTION_DEFAULT_NOISE_THRESHOLD = 20
 MOTION_DEFAULT_WIND_STOP = 20
 DELAY = 60
@@ -299,7 +299,8 @@ Make the following changes as required;
        be increased or decreased accordingly.  The script <span class="mono">resolutions.py</span>
        which is discussed further in <a href="#appendix-2">Appendix 2 - Auxiliary client programs</a> 
        can be used to list the available resolutions for the camera connected to your Pi.
-       In most cases it is recommended to leave these values as the default setting (640 x 480).
+       In most cases, if you are using standard Raspberry Pi cameras, it is recommended to leave these 
+       values as the default setting (1640 x 1232).
        <br><br>
        <em>Note: Increasing these values too large, along with some other parameters here, may
         result in imagery filesizes that are too large and may be rejected by your, or any subscribers,
@@ -313,7 +314,7 @@ Make the following changes as required;
        <br><br>
    <dt>MOTION_FRAMES_PER_SECOND</dt>
    <dd>This is the frame rate (frames per second) video capture rate that will be requested of
-       your camera.  The default value is 10.  This can be increased or decreased accordingly.
+       your camera.  The default value is 5.  This can be increased or decreased accordingly.
        <br><br>
        <em>Note: Increasing this value too large, along with some other parameters here, may
         result in imagery filesizes that are too large and may be rejected by your, or any subscribers,
@@ -323,7 +324,7 @@ Make the following changes as required;
    <dt>MOTION_RECORD_SECONDS</dt>
    <dd>This is the approximate duration in seconds a video will be recorded for a detected motion.
        This is an approximate time as the time of detecting the motion is also added to
-       any recorded video.  This has a default value of 7 seconds.  This value can be increased
+       any recorded video.  This has a default value of 5 seconds.  This value can be increased
        or decreased accordingly.
        <br><br>
        <em>Note: Increasing this value too large, along with some other parameters here, may

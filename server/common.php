@@ -37,13 +37,22 @@
   return (password_verify($password, $current_hash));
  };
 
+
  function get_subscribers() {
-  $subscribers = array_map('str_getcsv', file('conf/subscribers.txt'));
+  $subs_file = './conf/subscribers.txt';
+  if (! file_exists($subs_file)) {
+   return null;
+  };
+  $subscribers = array_map('str_getcsv', file($subs_file));
   return $subscribers;
  }
 
  function get_cams() {
-  $cams = array_map('str_getcsv', file('conf/cam_configs.txt'));
+  $cams_file = './conf/cam_configs.txt';
+  if (! file_exists($cams_file)) {
+   return null;
+  };
+  $cams = array_map('str_getcsv', file($cams_file));
   return $cams;
  }
 
@@ -153,6 +162,7 @@ EOF;
  <meta id="application-name" name="application-name" content="{$app_name}">
  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes">
  <meta charset="UTF-8">
+ <link rel="icon" href="{$home}/favicon.svg">
  <style>
 {$style}
  </style>

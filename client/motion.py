@@ -22,8 +22,11 @@ if not CAM_LABEL:
     exit()
 
 RESOLUTION = common.get_camera_image_size()
-VSIZE = (int(RESOLUTION['width']), int(RESOLUTION['height']))
 IMAGE_ROTATION = common.get_camera_image_rotation()
+VSIZE = (int(RESOLUTION['width']), int(RESOLUTION['height']))
+# Transpose size if image rotated either direction by 90 degrees
+if ((IMAGE_ROTATION == 1) or (IMAGE_ROTATION == 3)):
+    VSIZE = (int(RESOLUTION['height']), int(RESOLUTION['width']))
 DIFF_FRAMES = int(common.get_camera_motion_diff_frames())
 FRAMES_PER_SECOND = int(common.get_camera_motion_frames_per_second())
 RECORD_SECONDS = int(common.get_camera_motion_record_seconds())
@@ -109,19 +112,21 @@ def read_config(read_only):
         p('read_config - failed to read config')
         return
 
-    #p(conf_json)
+    p('Read Config ...')
+    p(conf_json)
 
     try:
         x = float(conf_json['score_threshold'])
         SCORE_THRESHOLD = x
         conf_json['score_threshold'] = x
+        p(f"SCORE_THRESHOLD = {SCORE_THRESHOLD}")
     except:
         pass
 
     try:
         WEATHER_OBS = conf_json['weather_obs']
-        #p('Weather obs')
-        #p(WEATHER_OBS)
+        p('Weather obs ...')
+        p(WEATHER_OBS)
     except:
         pass
 
@@ -182,7 +187,10 @@ def take_photo(msg):
     try:
         if common.precheck():
             frame = PICAM.capture_array('main')
-            image = Image.fromarray(frame)
+            # Use if red and blue swapped
+            image = Image.fromarray(frame[..., ::-1], mode='RGB')
+            # Use if red and blue okay
+            # image = Image.fromarray(frame)
             rotated_image = image
             if (IMAGE_ROTATION == 1):
                 # 90 clockwise 
@@ -263,29 +271,28 @@ def wind_stop():
 def get_timestamp():
     return os.popen("/bin/date").readline()
 
-def convert_video(input_file, output_file, framerate = 10):
+def convert_video(input_file, output_file, framerate):
+    rot = ""
+    if (IMAGE_ROTATION == 1):
+        # 90 clockwise
+        rot = ",transpose=1"
+    if (IMAGE_ROTATION == 2):
+        # 180  (2 x 90 counterclockwise)
+        rot = ",transpose=2,transpose=2"
+    if (IMAGE_ROTATION == 3):
+        # 90 counterclockwise 
+        rot = ",transpose=2"
+
+    fps = str(framerate)
+
     # Define the FFmpeg command
     command = [
         'ffmpeg',
         '-i', input_file,          # Input file
-        # '-r', str(framerate),      # Set frame rate
+        '-filter_complex', f"setpts=N/({fps}*TB){rot}",
         '-c:v', 'gif',
-        '-y' ]
+        '-y', output_file ]
 
-    if (IMAGE_ROTATION == 1):
-        # 90 clockwise
-        command.append('-vf')
-        command.append("transpose=1")
-    if (IMAGE_ROTATION == 2):
-        # 180  (2 x 90 counterclockwise)
-        command.append('-vf')
-        command.append("transpose=2,transpose=2")
-    if (IMAGE_ROTATION == 3):
-        # 90 counterclockwise 
-        command.append('-vf')
-        command.append("transpose=2")
-
-    command.append(output_file)         
     # Run the command
     try:
         subprocess.run(command, check = True)
@@ -302,9 +309,7 @@ os.system('rm -f motion-*.h264 motion-*.gif')
 
 PICAM = Picamera2()
 
-lsize = (640, 480)
-video_config = PICAM.create_video_configuration(main={"size": VSIZE, "format": "RGB888"},
-                                                lores={"size": lsize, "format": "YUV420"})
+video_config = PICAM.create_video_configuration(main={"size": VSIZE, "format": "RGB888"})
 video_config['controls']['FrameRate'] = FRAMES_PER_SECOND 
 PICAM.configure(video_config)
 ENCODER = H264Encoder()
@@ -319,7 +324,7 @@ take_photo('Start')
 
 # Main motion detection loop
 
-w, h = lsize
+w, h = VSIZE
 prev = None
 encoding = False
 ltime = 0
@@ -334,12 +339,12 @@ if os.path.isfile(video_file):
 output_loop = CircularOutput(video_file, buffersize=PREVIEW) 
 
 while True:
-    cur = PICAM.capture_buffer('lores')
+    cur = PICAM.capture_buffer('main')
     cur = cur[:w * h].reshape(h, w)
     if prev is not None:
         # Measure pixels differences between current and previous frame
         mse = np.square(np.subtract(cur, prev)).mean()
-        if mse > SCORE_THRESHOLD:
+        if (mse > SCORE_THRESHOLD):
             check_diff_frames += 1
             if (mse < min_mse):
                 min_mse = mse
@@ -393,6 +398,7 @@ while True:
             p('Sleeping')
             time.sleep(DELAY)
             p('Resuming')
+            read_config(True)
              
     prev = cur
 

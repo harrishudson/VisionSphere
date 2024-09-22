@@ -16,7 +16,10 @@
 EOF;
 
  $cams = get_cams();
- $s = sizeof($cams);
+ $s = 0;
+ if ($cams) {
+  $s = sizeof($cams);
+ }; 
  if ($s > 0) {
   echo <<<EOF
  <p>
@@ -37,7 +40,7 @@ EOF;
  </thead>
  <tbody>
 EOF;
-  };
+
  foreach($cams as $cam) {
   $f0 = escHTML($cam[0]);
   $f1 = escHTML($cam[1]);
@@ -73,13 +76,12 @@ EOF;
   </tr>
 EOF;
   };
- if ($s > 0) {
  echo <<<EOF
   </tbody>
  </table>
  </p>
 EOF;
-  };
+ };
  if ($s == 0) {
   echo "<p>No Cam's defined</p>";
  };

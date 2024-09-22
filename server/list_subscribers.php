@@ -19,7 +19,10 @@ EOF;
  $max_emails_per_day = $config['EMAIL']['MAX_SUBSCRIBER_EMAILS_PER_DAY'];
 
  $subs = get_subscribers();
- $s = sizeof($subs);
+ $s = 0;
+ if ($subs) {
+  $s = sizeof($subs);
+ };
  if ($s > 0) {
   echo <<<EOF
  <p>
@@ -35,7 +38,7 @@ EOF;
  </thead>
  <tbody>
 EOF;
-  };
+
  foreach($subs as $sub) {
   $f0 = escHTML($sub[0]);
   $f1 = escHTML($sub[1]);
@@ -80,13 +83,13 @@ EOF;
   </tr>
 EOF;
   };
- if ($s > 0) {
+
  echo <<<EOF
   </tbody>
  </table>
  </p>
 EOF;
-  };
+ };
  if ($s == 0) {
   echo "<p>No Subscriber's defined</p>";
  };

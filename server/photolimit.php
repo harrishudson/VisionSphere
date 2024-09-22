@@ -47,7 +47,7 @@ window.onload = form_validation;
          value="{$email_address}" placeholder="Email Address"></dd>
    </dl>
   <p>
-   <input id="submit" type="submit" value="Set">
+   <input id="submit" type="submit" value="Reset">
   </p>
   </form>
 EOF;
