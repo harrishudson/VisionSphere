@@ -227,9 +227,8 @@ IMAGE_ROTATION = 0
 # 1: 90 degrees clockwise
 # 2: 180 degrees
 # 3: 270 degrees (90 degrees counter-clockwise)
-MOTION_FRAMES_PER_SECOND = 5
-MOTION_RECORD_SECONDS = 5
-MOTION_DIFF_FRAMES = 3
+MOTION_FRAMES_PER_SECOND = 4
+MOTION_RECORD_SECONDS = 4
 MOTION_DEFAULT_NOISE_THRESHOLD = 20
 MOTION_DEFAULT_WIND_STOP = 20
 DELAY = 60
@@ -314,7 +313,7 @@ Make the following changes as required;
        <br><br>
    <dt>MOTION_FRAMES_PER_SECOND</dt>
    <dd>This is the frame rate (frames per second) video capture rate that will be requested of
-       your camera.  The default value is 5.  This can be increased or decreased accordingly.
+       your camera.  The default value is 4.  This can be increased or decreased accordingly.
        <br><br>
        <em>Note: Increasing this value too large, along with some other parameters here, may
         result in imagery filesizes that are too large and may be rejected by your, or any subscribers,
@@ -322,25 +321,13 @@ Make the following changes as required;
        <br><br>
    </dd>
    <dt>MOTION_RECORD_SECONDS</dt>
-   <dd>This is the approximate duration in seconds a video will be recorded for a detected motion.
-       This is an approximate time as the time of detecting the motion is also added to
-       any recorded video.  This has a default value of 5 seconds.  This value can be increased
-       or decreased accordingly.
+   <dd>This is the duration in seconds a video will be recorded for a detected motion.
+       This has a default value of 4 seconds.  This value can be increased or decreased accordingly.
        <br><br>
        <em>Note: Increasing this value too large, along with some other parameters here, may
         result in imagery filesizes that are too large and may be rejected by your, or any subscribers,
         email servers.</em>
-       <br><br>
-   <dt>MOTION_DIFF_FRAMES</dt>
-   <dd>For motion to be detected, there must be this value + 1 consecutive frames
-       from the image stream that differ by, at least, the Image Noise Threshold setting.
-       This has a default value of 3 which means that there must be 4 consecutive frames
-       differing by the minimum noise value setting for motion to be considered.  Generally,
-       this value does not need to be altered.  And care should be taken when altering this
-       value.  However, if your camera is experiencing false motion detection's from short
-       transient flashes in light, you may wish to tune/adjust this value.  If necessary
-       to change this value, It is recommended to do so in small increments.
-       <br><br>
+       <br><br></dd>
    <dt>MOTION_DEFAULT_NOISE_THRESHOLD</dt>
    <dd>This is the default motion detect noise setting the camera will initially be started at.
        As soon as any subscriber has set or updated this Camera configuration, this value will
@@ -392,10 +379,10 @@ The Pi crontab should now be as follows;
 <br><br>
  crontab.l
  <pre class="terminal" >
-*/5 * * * * /usr/bin/python fetchconfig.py &gt;/dev/null 2&gt;/dev/null &amp;
-53 * * * * /usr/bin/python ping_reboot.py &gt;/dev/null 2&gt;/dev/null &amp;
-0 6 * * 0 /usr/bin/sudo /sbin/reboot &gt;/dev/null 2&gt;/dev/null &amp;
-@reboot $HOME/motion_restarter.sh &gt;/dev/null 2&gt;/dev/null &amp;</pre>
+*/5 * * * * /usr/bin/python $HOME/fetchconfig.py &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &
+53 * * * * /usr/bin/python $HOME/ping_reboot.py &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &
+0 6 * * 0 /usr/bin/sudo /sbin/reboot &gt;/dev/null 2&gt;/dev/null &
+@reboot nohup $HOME/motion_restarter.sh &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &</pre>
 <br>
 A line-by-line description of this crontab is;
 <ol>
@@ -414,7 +401,6 @@ A line-by-line description of this crontab is;
      for any reason, the <span class="mono">motion_restarter.sh</span> script will attempt to 
      restart it for a limited number of retry attempts.</li>
 </ol>
-
 
 <h4>Reboot and Finish</h4>
 <p>

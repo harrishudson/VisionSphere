@@ -115,18 +115,18 @@ def speed_test():
     fileptr = open(outfile, 'r')
     f_contents = fileptr.read()
     logger('Speed Test', f_contents)
-    os.system(f"rm -f {outfile}")
+    os.system(f"rm -f {outfile} & >/dev/null 2>/dev/null")
 
 def wifi_scan():
     rand = str(random.randint(1,10000))
     outfile = f"/var/tmp/wifi_scan_{rand}.out"
-    os.system(f"rm -f {outfile}")
+    os.system(f"rm -f {outfile} >/dev/null 2>/dev/null")
     cmd = '/usr/bin/sudo iw dev ' + get_network_interface() + ' scan'
     os.system(f"{cmd} 2>&1 >{outfile}")
     fileptr = open(outfile, 'r')
     f_contents = fileptr.read()
     logger('Wifi Scan', f_contents)
-    os.system(f"rm -f {outfile}")
+    os.system(f"rm -f {outfile} & >/dev/null 2>/dev/null")
 
 def ping_reboot():
     BASE = get_server_full_base_url()
@@ -138,7 +138,7 @@ def ping_reboot():
         html = urllib.request.urlopen(req).read()
         result = html.decode('utf-8')
         if not result:
-            os.system('/usr/bin/sudo /sbin/reboot')
+            os.system('/usr/bin/sudo /sbin/reboot &')
     except:
-        os.system('/usr/bin/sudo /sbin/reboot')
+        os.system('/usr/bin/sudo /sbin/reboot &')
 

@@ -104,6 +104,9 @@ end user experience so some further guidelines are listed here;
      down to be able to detect small animals.  However, this may also 
      necessitate configuring a fairly low Weather <span class="mono">Wind Stop</span> 
      setting also (see below).</li>
+ <li>Outdoor cameras used at night under artificial light may possibly emit
+     higher image noise levels and, as such, they may require an increased noise
+     threshold setting to minimise the likelihood of false triggers.</li>
 </ul>
 As a general guideline, in the process of tuning - if you are receiving 
 emails for very minor changes in motion (that are essentially false detection's), 

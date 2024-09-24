@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-import os, io, subprocess, datetime, time, json, random, base64, math 
+import os, glob, io, subprocess, datetime, time, json, random, base64, math 
 import numpy as np
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
-from picamera2.outputs import CircularOutput, FileOutput
+from picamera2.outputs import FileOutput
 from PIL import Image
 import urllib, urllib.parse, urllib.request
 import common
@@ -27,7 +27,6 @@ VSIZE = (int(RESOLUTION['width']), int(RESOLUTION['height']))
 # Transpose size if image rotated either direction by 90 degrees
 if ((IMAGE_ROTATION == 1) or (IMAGE_ROTATION == 3)):
     VSIZE = (int(RESOLUTION['height']), int(RESOLUTION['width']))
-DIFF_FRAMES = int(common.get_camera_motion_diff_frames())
 FRAMES_PER_SECOND = int(common.get_camera_motion_frames_per_second())
 RECORD_SECONDS = int(common.get_camera_motion_record_seconds())
 SCORE_THRESHOLD = float(common.get_camera_motion_default_noise_threshold())
@@ -187,7 +186,7 @@ def take_photo(msg):
     try:
         if common.precheck():
             frame = PICAM.capture_array('main')
-            # Use if red and blue swapped
+            # Use if red and blue swapped (eg, RGB888 format)
             image = Image.fromarray(frame[..., ::-1], mode='RGB')
             # Use if red and blue okay
             # image = Image.fromarray(frame)
@@ -295,17 +294,44 @@ def convert_video(input_file, output_file, framerate):
 
     # Run the command
     try:
-        subprocess.run(command, check = True)
+        res = subprocess.run(command, stderr=subprocess.PIPE, text=True)
+        if (not res):
+            common.logger('Ffmpeg Video Conversion Failure.', res.stderr);
         p(f"Conversion to {output_file} completed successfully.")
     except subprocess.CalledProcessError as e:
+        common.logger('Ffmpeg Video Conversion Failure.', res.stderr);
         p(f"Video conversion Error occurred: {e}")
+
+def decimate_image(image_buffer, sf):
+    # Convert buffer to a PIL Image
+    image = Image.fromarray(image_buffer)
+    # Resize the image (downsample)
+    new_size = (int(image.width * sf), int(image.height * sf))
+    # Possible fine tuning options (speed vs quality for other options)
+    # downsampled_image = image.resize(new_size, Image.ANTIALIAS)
+    # downsampled_image = image.resize(new_size, Image.NEAREST)
+    # downsampled_image = image.resize(new_size, Image.BICUBIC)
+    downsampled_image = image.resize(new_size)
+    # Convert the downsampled image back to a numpy array for further processing
+    downsampled_image_array = np.array(downsampled_image)
+    return downsampled_image_array
 
 
 # Main
 # ----
 
 # Cleanup video files
-os.system('rm -f motion-*.h264 motion-*.gif')
+#os.system('rm -f motion-*.h264 motion-*.gif & >/dev/null 2>/dev/null')
+for file_path in glob.glob("motion-*.h264"):
+    try:
+        os.remove(file_path)
+    except OSError as e:
+        pass
+for file_path in glob.glob("motion-*.gif"):
+    try:
+        os.remove(file_path)
+    except OSError as e:
+        pass
 
 PICAM = Picamera2()
 
@@ -313,8 +339,6 @@ video_config = PICAM.create_video_configuration(main={"size": VSIZE, "format": "
 video_config['controls']['FrameRate'] = FRAMES_PER_SECOND 
 PICAM.configure(video_config)
 ENCODER = H264Encoder()
-# Preview 3 seconds of buffers
-PREVIEW = 3 * FRAMES_PER_SECOND
 PICAM.start()
 
 read_config(True)
@@ -322,51 +346,66 @@ read_config(True)
 time.sleep(20)
 take_photo('Start')
 
-# Main motion detection loop
-
 w, h = VSIZE
 prev = None
+prior = None
 encoding = False
 ltime = 0
-check_diff_frames = 0
-min_mse = math.inf
-frame_counter = 0
+ctime = time.time()
 
 vrand = str(random.randint(1,10000))
 video_file = f"motion-{vrand}.h264"
 if os.path.isfile(video_file):
     os.remove(video_file)
-output_loop = CircularOutput(video_file, buffersize=PREVIEW) 
+output_file = FileOutput(video_file) 
+
+# Compute scale factor for image frames to be compared
+# Use 480px as a target width or height
+dim = max(w,h)
+if (dim > 480):
+    scale_factor = 480 / dim 
+else:
+    scale_factor = 1
+
+
+# Main motion detection loop
+# --------------------------
 
 while True:
-    cur = PICAM.capture_buffer('main')
-    cur = cur[:w * h].reshape(h, w)
-    if prev is not None:
-        # Measure pixels differences between current and previous frame
-        mse = np.square(np.subtract(cur, prev)).mean()
-        if (mse > SCORE_THRESHOLD):
-            check_diff_frames += 1
-            if (mse < min_mse):
-                min_mse = mse
-            if (not encoding) and (check_diff_frames >= DIFF_FRAMES) and (not wind_stop()) and (STATUS != 'Stop'):
-                ENCODER.output = output_loop
-                PICAM.start_encoder(ENCODER)
-                encoding = True
-                p('New Motion Detected')
-                motion_min_mse = min_mse
-                p(motion_min_mse)
-                ltime = time.time()
-                timestamp = get_timestamp()
+    if (not encoding):
+        current_frame = PICAM.capture_array('main')
+        if (scale_factor != 1):
+            cur = decimate_image(current_frame, scale_factor)
         else:
-            check_diff_frames = 0
-            min_mse = math.inf
+            cur = current_frame
+    if prev is not None and prior is not None:
+        # Measure pixels differences between current and previous frame
+        if (not encoding):
+            mse0 = np.square(np.subtract(cur, prev)).mean()
+            p(f"Current/Previous frame diff score: {mse0}")
+            if (mse0 > SCORE_THRESHOLD):
+                # Possible motion in last 2 frames.  Need to check further and confirm
+                p("Possible motion in last 2 frames.  Now checking prior frame")
+                mse1 = np.square(np.subtract(prev, prior)).mean()
+                mse2 = np.square(np.subtract(cur, prior)).mean()
+                if ((mse1 + mse2) > SCORE_THRESHOLD*2):
+                    if (not wind_stop()) and (STATUS != 'Stop'):
+                        # Differences deteccted in the last 3 frames
+                        # Very likely to be motion over this period
+                        ENCODER.output = output_file
+                        PICAM.start_encoder(ENCODER)
+                        encoding = True
+                        p('New Motion Detected in last 3 frames. Starting Recording.')
+                        p(f"Trigger score = {mse0}")
+                        ltime = time.time()
+                        timestamp = get_timestamp()
         if encoding and time.time() - ltime > RECORD_SECONDS:
             PICAM.stop_encoder()
             encoding = False
+            cur = None
             prev = None
-            check_diff_frames = 0
-            min_mse = math.inf
-            p('Stopped recording')
+            prior = None
+            p('Stopped Recording')
             if common.precheck():
                 p('Begin Converting Video')
                 gif_rand = str(random.randint(1,10000))
@@ -379,7 +418,7 @@ while True:
                 fileptr = open(gif_file, 'rb')
                 img = fileptr.read()
                 p('Sending video')
-                send_email(img, 'gif', timestamp, 'Motion Detected', round(motion_min_mse,2))
+                send_email(img, 'gif', timestamp, 'Motion Detected', round(mse0,2))
                 if os.path.isfile(gif_file):
                     os.remove(gif_file)
                 img = None
@@ -393,19 +432,19 @@ while True:
             video_file = f"motion-{vrand}.h264"
             if os.path.isfile(video_file):
                 os.remove(video_file)
-            output_loop = CircularOutput(video_file, buffersize=PREVIEW) 
+            output_file = FileOutput(video_file) 
+            ENCODER.output = output_file
 
             p('Sleeping')
             time.sleep(DELAY)
             p('Resuming')
             read_config(True)
-             
+                 
+    prior = prev
     prev = cur
-
-    # Check config after every 100 frames if not currently recording
+    
+    # If not currenctly recording check config after every 20 seconds
     if (not encoding):
-        frame_counter += 1
-        if (frame_counter > 100):
-            frame_counter = 0
-            prev = None
+        if (time.time() - ctime > 20):
             read_config(False)
+            ctime = time.time()
