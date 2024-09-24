@@ -379,10 +379,10 @@ The Pi crontab should now be as follows;
 <br><br>
  crontab.l
  <pre class="terminal" >
-*/5 * * * * /usr/bin/python $HOME/fetchconfig.py &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &
-53 * * * * /usr/bin/python $HOME/ping_reboot.py &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &
-0 6 * * 0 /usr/bin/sudo /sbin/reboot &gt;/dev/null 2&gt;/dev/null &
-@reboot nohup $HOME/motion_restarter.sh &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &</pre>
+*/5 * * * * /usr/bin/python $HOME/fetchconfig.py &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &amp;
+53 * * * * /usr/bin/python $HOME/ping_reboot.py &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &amp;
+0 6 * * 0 /usr/bin/sudo /sbin/reboot &gt;/dev/null 2&gt;/dev/null &amp;
+@reboot nohup $HOME/motion_restarter.sh &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &amp;</pre>
 <br>
 A line-by-line description of this crontab is;
 <ol>
