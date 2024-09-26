@@ -37,7 +37,7 @@ STATUS = 'Start'
 BOM_ID = ''
 BOM_WMO = ''
 WEATHER_OBS = {}
-DEBUG = False 
+DEBUG = False
 
 def p(msg):
     if DEBUG:
@@ -348,8 +348,9 @@ take_photo('Start')
 
 w, h = VSIZE
 prev = None
-prior = None
+latest = None
 encoding = False
+confirmed_movement = False
 ltime = 0
 ctime = time.time()
 
@@ -378,69 +379,98 @@ while True:
             cur = decimate_image(current_frame, scale_factor)
         else:
             cur = current_frame
-    if prev is not None and prior is not None:
+    if prev is not None:
         # Measure pixels differences between current and previous frame
         if (not encoding):
+            confirmed_movement = False
             mse0 = np.square(np.subtract(cur, prev)).mean()
             p(f"Current/Previous frame diff score: {mse0}")
-            if (mse0 > SCORE_THRESHOLD):
-                # Possible motion in last 2 frames.  Need to check further and confirm
-                p("Possible motion in last 2 frames.  Now checking prior frame")
-                mse1 = np.square(np.subtract(prev, prior)).mean()
-                mse2 = np.square(np.subtract(cur, prior)).mean()
+            p(f"Trigger score = {mse0}")
+    
+            if (mse0 > SCORE_THRESHOLD) and (not wind_stop()) and (STATUS != 'Stop'):
+                # Possible motion in last 2 frames.  
+                # Start encoding and check further.
+                encoding = True
+                ltime = time.time()
+                timestamp = get_timestamp()
+                ENCODER.output = output_file
+                PICAM.start_encoder(ENCODER)
+                encoding = True
+
+                p('Possible motion in last 2 frames.')
+
+                # Take a third frame
+                latest_frame = PICAM.capture_array('main')
+                if (scale_factor != 1):
+                    latest = decimate_image(latest_frame, scale_factor)
+                else:
+                    latest = latest_frame
+                mse1 = np.square(np.subtract(prev, latest)).mean()
+                mse2 = np.square(np.subtract(cur, latest)).mean()
                 if ((mse1 + mse2) > SCORE_THRESHOLD*2):
-                    if (not wind_stop()) and (STATUS != 'Stop'):
-                        # Differences deteccted in the last 3 frames
-                        # Very likely to be motion over this period
-                        ENCODER.output = output_file
-                        PICAM.start_encoder(ENCODER)
-                        encoding = True
-                        p('New Motion Detected in last 3 frames. Starting Recording.')
-                        p(f"Trigger score = {mse0}")
-                        ltime = time.time()
-                        timestamp = get_timestamp()
-        if encoding and time.time() - ltime > RECORD_SECONDS:
-            PICAM.stop_encoder()
-            encoding = False
-            cur = None
-            prev = None
-            prior = None
-            p('Stopped Recording')
-            if common.precheck():
-                p('Begin Converting Video')
-                gif_rand = str(random.randint(1,10000))
-                gif_file = f"motion-{gif_rand}.gif"
-                if os.path.isfile(gif_file):
-                    os.remove(gif_file)
-                convert_video(video_file, gif_file, FRAMES_PER_SECOND)
-                p('Finished Converting Video')
-                p(gif_file)
-                fileptr = open(gif_file, 'rb')
-                img = fileptr.read()
-                p('Sending video')
-                send_email(img, 'gif', timestamp, 'Motion Detected', round(mse0,2))
-                if os.path.isfile(gif_file):
-                    os.remove(gif_file)
-                img = None
-            else:
-                p('No active subscribers - precheck failure')
+                    # Differences deteccted in the last 3 frames
+                    # Movement has been confirmed
+                    p('New Motion Detected in last 3 frames. ')
+                    p('Motion confirmed.')
+                    confirmed_movement = True
+                else:
+                    # Motion not confirmed by 3rd frame
+                    # Abandon recording
+                    p('Abandoning recording.  Reseting video stream')
+                    PICAM.stop_encoder()
+                    if os.path.isfile(video_file):
+                        os.remove(video_file)
+                    vrand = str(random.randint(1,10000))
+                    video_file = f"motion-{vrand}.h264"
+                    if os.path.isfile(video_file):
+                        os.remove(video_file)
+                    output_file = FileOutput(video_file) 
+                    ENCODER.output = output_file
+                    encoding = False
+                    confirmed_movement = False
+                    prev = cur
+                    cur = latest
 
-            p('Reseting video stream')
-            if os.path.isfile(video_file):
-                os.remove(video_file)
-            vrand = str(random.randint(1,10000))
-            video_file = f"motion-{vrand}.h264"
-            if os.path.isfile(video_file):
-                os.remove(video_file)
-            output_file = FileOutput(video_file) 
-            ENCODER.output = output_file
+    if (encoding) and (confirmed_movement) and (encoding and time.time() - ltime > RECORD_SECONDS):
+        PICAM.stop_encoder()
+        encoding = False
+        cur = None
+        prev = None
+        p('Stopped Recording')
+        if common.precheck():
+            p('Begin Converting Video')
+            gif_rand = str(random.randint(1,10000))
+            gif_file = f"motion-{gif_rand}.gif"
+            if os.path.isfile(gif_file):
+                os.remove(gif_file)
+            convert_video(video_file, gif_file, FRAMES_PER_SECOND)
+            p('Finished Converting Video')
+            p(gif_file)
+            fileptr = open(gif_file, 'rb')
+            img = fileptr.read()
+            p('Sending video')
+            send_email(img, 'gif', timestamp, 'Motion Detected', round(mse0,2))
+            if os.path.isfile(gif_file):
+                os.remove(gif_file)
+            img = None
+        else:
+            p('No active subscribers - precheck failure')
 
-            p('Sleeping')
-            time.sleep(DELAY)
-            p('Resuming')
-            read_config(True)
-                 
-    prior = prev
+        p('Reseting video stream')
+        if os.path.isfile(video_file):
+            os.remove(video_file)
+        vrand = str(random.randint(1,10000))
+        video_file = f"motion-{vrand}.h264"
+        if os.path.isfile(video_file):
+            os.remove(video_file)
+        output_file = FileOutput(video_file) 
+        ENCODER.output = output_file
+
+        p('Sleeping')
+        time.sleep(DELAY)
+        p('Resuming')
+        read_config(True)
+              
     prev = cur
     
     # If not currenctly recording check config after every 20 seconds

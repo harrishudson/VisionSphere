@@ -12,7 +12,7 @@ This application is a simple camera motion detection system intended to be run o
 
 ## Build Instructions
 - Create a directory that is publicly accessible on your web server.
-- Recursively copy all files under this repo **server** directory to the this directory on your web server.
+- Recursively copy all files under this repo **server** directory to the directory on your web server.
 - Using a browser, go to your web server and find the *Help and Documentation* section of this application.
 - Follow the instructions under *Server Installation and Reference Guide* to complete your server configuration.
 - Follow the instructions under *Client Installation and Reference Guide* to complete your Raspberry Pi build.

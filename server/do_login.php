@@ -19,3 +19,5 @@
  $msg = urlencode("Authentication Failed");
  $return_url_esc = urlencode($return_url);
  header("Location: login.php?MSG=".$msg."&RETURN_URL=".$return_url_esc);
+
+?>
