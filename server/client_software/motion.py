@@ -395,7 +395,6 @@ while True:
                 timestamp = get_timestamp()
                 ENCODER.output = output_file
                 PICAM.start_encoder(ENCODER)
-                encoding = True
 
                 p('Possible motion in last 2 frames.')
 

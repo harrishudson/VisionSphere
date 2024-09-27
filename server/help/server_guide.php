@@ -177,6 +177,16 @@ there has to be some degree of trust between active subscribers on a given SYSTE
 Also, you should perhaps be aware that any user can unsubscribe from emails without
 providing any sort of authentication.  So to reduce attack vectors, you are discouraged
 from publishing public links to your SYSTEM's
+<br><br>
+In addition;
+<ul>
+ <li>As AUTH KEY's are stored in plain text on your Raspberry Pi's - you 
+     should ensure and maintain physical security of these devices.</li>
+ <li>As there is currently no time expiry nor client IP address filtering 
+     implemented by this application for your server authentication,
+     in order to mitigate attack vector risks, you should consider to 
+     periodically change the your entire SYSTEM's AUTH KEY's from time to time.</li>
+</ul>
 
 <h5>Authorisation</h5>
 There is no strict authorisation model for this application.  However, a degree of authorisation
