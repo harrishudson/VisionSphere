@@ -18,6 +18,10 @@
      No other cookies are used by this application.</li>
  <li>Free text authentication keys are only sent in POST request payloads and, as such,
      should not be present or visible in typical server web logging configurations.</li>
+ <li>No Imagery files are stored permanently on client Raspberry Pi's nor stored on your server. 
+     Temporary Imagery files only exist on your Raspberry Pi's for the duration of time they are being 
+     recorded and then transferred to your server to be ultimately sent on by email.  No Imagery files, 
+     permanent or temporary, are stored on your server.</li>
 </ul>
 </p>
 
