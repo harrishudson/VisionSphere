@@ -457,8 +457,9 @@ network={
  key_mgmt=WPA-PSK
 }
 network={
+ ssid=""
  key_mgmt=NONE
- priority=-999
+ scan_ssid=1
 }</pre>
 
 Here the first <span class="mono">network</span> entry contains empty strings for <span class="mono">ssid</span>

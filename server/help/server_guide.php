@@ -48,6 +48,7 @@ FULL_BASE_URL = "";
 
 [AUTHENTICATION]
 AUTH_KEY_HASH = "";
+AUTH_SESSION_NAME = "VSSESSION1";
 
 [EMAIL]
 FROM = "";
@@ -120,6 +121,16 @@ Make the following changes as required;
        <br><br>
        <em>Note: Please use your own AUTH KEY / password and do not copy these examples.</em>
    </dd>
+   <dt>AUTH_SESSION_NAME *</dt>
+   <dd>This is a mandatory required setting.  It is just an arbitrary string used for the php session
+       cookie information.  However, this generally doesn't need to be changed.  By default, it is set 
+       to "VSSESSION1".  Generally, the only time this would need to be changed is if you are setting 
+       up multiple SYSTEM's on the same host/domain.  That is different SYSTEM's under different install 
+       directories but on the same host/domain.  In this case, to ensure web authentication session 
+       isolation, such 2 SYSTEM's should use a unique AUTH_SESSION_NAME each.  Otherwise, authentication 
+       session sharing between such 2 SYSTEM's may occur.  This is only applicable to the web interface 
+       component of this application - the Raspberry Pi's themselves do not use a concept of sessions and 
+       they authenticate with every posted data request.</dd>
   </dl>
  </li>
  <li>[EMAIL]
@@ -201,7 +212,11 @@ For example, you could have 2 different SYSTEM's, or install endpoints, such as;
   <li>https://mydomain123.au/my_beach_house_cams</li>
   <li>https://mydomain123.au/my_home_cams</li>
  </ol>
-
+<br/>
+Please note that when setting up multiple SYSTEM's on the same host/domain (as shown 
+in the example above - ie, sharing host; mydomain123.au), it may be necessary to define 
+unique AUTH_SESSION_NAME strings for each installed SYSTEM to ensure authentication
+session isolation (see above).
 <h5>Accounting</h5>
 The accounting model for this application is normal web log accounting.  You can refer to
 your server web logs to check activity.  Further, no free text passwords will be sent to

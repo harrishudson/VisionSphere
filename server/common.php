@@ -2,6 +2,15 @@
 
  $session_timeout = 1200;
 
+ $config1_file = './conf/config.ini';
+ if (file_exists($config1_file)) {
+  $config1 = parse_ini_file($config1_file, true);
+  $auth_session_name = $config1['AUTHENTICATION']['AUTH_SESSION_NAME'];
+  session_name($auth_session_name);
+ } else {
+  session_name('VSSESSION1');
+ };
+
  session_start(['cookie_lifetime' => $session_timeout]);
  //session_start();
 
