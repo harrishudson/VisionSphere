@@ -381,7 +381,7 @@ The Pi crontab should now be as follows;
  <pre class="terminal" >
 */5 * * * * /usr/bin/python $HOME/fetchconfig.py &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &amp;
 53 * * * * /usr/bin/python $HOME/ping_reboot.py &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &amp;
-0 6 * * 0 /usr/bin/sudo /sbin/reboot &gt;/dev/null 2&gt;/dev/null &amp;
+1 6 * * 0 /usr/bin/sudo /sbin/reboot &gt;/dev/null 2&gt;/dev/null &amp;
 @reboot nohup $HOME/motion_restarter.sh &lt;/dev/null &gt;/dev/null 2&gt;/dev/null &amp;</pre>
 <br>
 A line-by-line description of this crontab is;
@@ -392,8 +392,8 @@ A line-by-line description of this crontab is;
      simple static file from the server.  Should that fetch request fail, the Pi will
      reboot.  This is to help safeguard when the Pi might be deployed in unreliable networks.
      If you do not want this functionality - remove this line.</li>
- <li>Every Sunday morning at 6am, the Pi will reboot.  If you do not want this functionality -
-     remove this line.</li>
+ <li>Every Sunday morning at 1 minute past 6am, the Pi will reboot.  If you do not want this 
+  functionality - remove this line.</li>
  <li>Upon boot of the Pi, the shell script 
      <span class="mono">motion_restarter.sh</span> will be called.  This, in turn,
      will invoke the python <span class="mono">motion.py</span> program - which does all the
