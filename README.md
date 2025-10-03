@@ -7,8 +7,15 @@ Camera Motion Detection for Raspberry Pi's with focus on Australian residents.
 This application is a simple camera motion detection system intended to be run on Raspberry Pi micro computers. Uses could vary from security applications, to monitoring households, to wildlife recording. Technically, the application simply checks an image stream for differences in consecutive image frames to assess if motion has been detected. As it is, this application is largely intended for Australian users but could be modified for use in other countries.
 
 ## Requirements
-- At least 1 **Raspberry Pi** micro computer with a Camera. Camera equipped Pi Zero's are ideal.
-- A **web server** that supports serving **php** files. If your cameras will be deployed publicly, you may need a publicly accessible web hosting service - ideally with your own registered domain. cPanel hosting services are ideal. Setting up a web server that can serve php files is beyond the scope of this help documentation here. You are assumed to have access to a web server - whether that is an internal intranet web server or a public web hosting environment. 
+
+### Raspberry Pi
+At least 1 **Raspberry Pi** micro computer with a Camera. Camera equipped Pi Zero's are ideal.
+
+### Web Server
+A **web server** that supports serving **php** files. If your cameras will be deployed publicly, you may need a publicly accessible web hosting service - ideally with your own registered domain. cPanel hosting services are ideal. Setting up a web server that can serve php files is beyond the scope of this help documentation here. You are assumed to have access to a web server - whether that is an internal intranet web server or a public web hosting environment.  Your web server should support the following;
+- Able to serve **php** files
+- Serve content over **https** (secure connection).  *This may require certificate configuration on your web server.*
+- Able to send an email from a php **mail()** function.  *This may require a sendmail or a mail transfer agent to be setup as part of your web server php configuration.*
 
 ## Build Instructions
 - Create a directory that is publicly accessible on your web server.
