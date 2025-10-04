@@ -1,9 +1,6 @@
 <?php 
-
   include '../common.php';
-
   page_top(true);
-
 ?>
 
 <h2>Requirements</h2>
@@ -18,7 +15,16 @@ The requirements for this application are;
      You are assumed to have access to a web server - whether that is an internal intranet web 
      server or a public web hosting environment.  In fact, if you can read this help page,
      you probably have your basic web server working correctly and you can continue to the 
-     next steps.</li>
+     next steps.  Your web server should support the following;
+     <ul>
+      <li>Able to serve <b>php</b> files</li>
+      <li>Serve content over <b>https</b> (secure connection). 
+          <em>This may require certificate configuration on your web server.</em></li>
+      <li>Able to send an email from a php <b>mail()</b> function. 
+          <em>This may require a sendmail or a mail transfer agent to be setup as part of 
+              your web server php configuration.</em></li>
+     </ul>
+ </li>
  <li>If you are doing the Raspberry Pi build/configuration, you may need some basic understanding of;
       <ul>
        <li>Raspberry Pi micro computers running <b>Linux</b> - including; setting up a Pi from scratch and 
