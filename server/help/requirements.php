@@ -6,6 +6,7 @@
 <h2>Requirements</h2>
 <p>
 The requirements for this application are;
+</p>
 <ol>
  <li>At least 1 <b>Raspberry Pi</b> micro computer with a Camera.  Camera equipped Pi Zero's are ideal.</li>
  <li>A <b>web server</b> that supports serving <b>php</b> files.  If your cameras will be deployed 
@@ -34,6 +35,5 @@ The requirements for this application are;
       </ul>
   </li>
 </ol>
-</p>
 
 <?php page_bottom(true); ?>

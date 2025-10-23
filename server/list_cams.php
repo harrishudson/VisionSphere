@@ -30,7 +30,7 @@ EOF;
    <th>Noise Threshold</th>
    <th>Pending Camera Action</th>
    <th>Pending System Action</th>
-   <th>BOM Station ID</th>
+   <th>BOM Station State ID</th>
    <th>BOM Station WMO</th>
    <th>Wind Stop Km/h</th>
    <th>Last Config Poll</th>

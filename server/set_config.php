@@ -70,8 +70,18 @@ window.onload = form_validation;
     <dt>Image Noise Threshold</dt>
     <dd><input id="SCORE_THRESHOLD" type="number" step="0.01"
          name="SCORE_THRESHOLD" value="{$score_threshold}" placeholder="20"></dd>
-    <dt>BOM Station ID</dt>
-    <dd><input type="text" name="BOM_ID" value="{$bom_id}"></dd>
+    <dt>BOM Station State ID</dt>
+    <dd><input list="products" type="text" name="BOM_ID" value="{$bom_id}">
+     <datalist id="products">
+      <option value="IDD60910">NT</option>
+      <option value="IDN60910">NSW &amp; ACT</option>
+      <option value="IDQ60910">QLD</option>
+      <option value="IDS60910">SA</option>
+      <option value="IDT60910">TAS &amp; ANT</option>
+      <option value="IDV60910">VIC</option>
+      <option value="IDW60910">WA</option>
+     </datalist> 
+    </dd>
     <dt>BOM Station WMO</dt>
     <dd><input type="text" name="BOM_WMO" value="{$bom_wmo}"></dd>
     <dt>Stop When Wind Above</dt>

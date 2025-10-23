@@ -1,95 +1,223 @@
 <?php
 
- $GLOBALS['CACHE_LOCATION'] = "./cache";
- $GLOBALS['CACHE_TIMEOUT'] = 10 * 60;
- $GLOBALS['CACHE_FILENAME_SUFFIX'] = "json";  // Suffix must not have any spaces
- 
- // Make cache file name (note - there must be no spaces in suffix)
- function get_cache_filename($url) {
-  $prefix = base64_encode($url);
-  $filename = $GLOBALS['CACHE_LOCATION']."/{$prefix}.{$GLOBALS['CACHE_FILENAME_SUFFIX']}";
-  return $filename;
- }
+date_default_timezone_set('Australia/Sydney');
 
- function cache_cleanup() {
-  $path = $GLOBALS['CACHE_LOCATION'];
-  if ($handle = opendir($path)) {
-   while (false !== ($file = readdir($handle))) { 
-    if (pathinfo($file, PATHINFO_EXTENSION) == $GLOBALS['CACHE_FILENAME_SUFFIX']) {
-     $filelastmodified = filemtime("{$path}/{$file}");
-     if((time() - $filelastmodified) > $GLOBALS['CACHE_TIMEOUT']) {
-      unlink("{$path}/{$file}");
-      }
-     }
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+
+$CACHE_DIR = __DIR__ . '/cache';
+if (!file_exists($CACHE_DIR)) mkdir($CACHE_DIR, 0777, true);
+$CACHE_TTL = 240; // 4 minutes
+$FTP_BASE = 'ftp://ftp.bom.gov.au/anon/gen/fwo/';
+$STATE_MAP = [
+    'NSW' => 'IDN60910',
+    'VIC' => 'IDV60910',
+    'QLD' => 'IDQ60910',
+    'WA'  => 'IDW60910',
+    'SA'  => 'IDS60910',
+    'TAS' => 'IDT60910',
+    'NT'  => 'IDD60910',
+    'IDN60910' => 'IDN60910',
+    'IDV60910' => 'IDV60910',
+    'IDQ60910' => 'IDQ60910',
+    'IDW60910' => 'IDW60910',
+    'IDS60910' => 'IDS60910',
+    'IDT60910' => 'IDT60910',
+    'IDD60910' => 'IDD60910'
+];
+
+function humaniseTime($timestamp) {
+    $dt = DateTime::createFromFormat('YmdHis', $timestamp);
+    return $dt ? $dt->format('l, F j, Y g:i A') : '';
+}
+
+function validate_states($stateParam) {
+    global $STATE_MAP;
+    if ($stateParam !== 'ALL' && $stateParam !== 'ACT' &&
+        !isset($STATE_MAP[$stateParam]) && !in_array($stateParam, $STATE_MAP)) {
+        return false;
     }
-   closedir($handle); 
-  }  
- }
+    return true;
+}
 
- function weather_request($bom_id, $bom_wmo) {
-  if (is_null($bom_id) || $bom_id == '')
-   return null;
-  if (is_null($bom_wmo) || $bom_wmo == '')
-   return null;
-  //$url = curl_init("http://www.bom.gov.au/fwo/".$bom_id."/".$bom_id.".".$bom_wmo.".json");
-  $url = "http://www.bom.gov.au/fwo/{$bom_id}/{$bom_id}.{$bom_wmo}.json";
-  $cache_file = get_cache_filename($url);
-  $mode = '';
-  if ((file_exists($cache_file)) && 
-      (filemtime($cache_file) > (time() - $GLOBALS['CACHE_TIMEOUT']))) {
-   // File is cached and still valid 
-   // Don't bother refreshing, just use the file as-is.
-   $mode = 'cache';
-   $file = file_get_contents($cache_file);
-  } else {
-   // Our cache is out-of-date, so load the data from our remote server,
-   // and also save it over our cache for next time.
-   $mode = 'fetch';
-   //$file = file_get_contents($url);
-   $ch = curl_init($url);
-   $useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36';
-   curl_setopt($ch, CURLOPT_USERAGENT, $useragent);
-   curl_setopt($ch, CURLOPT_REFERER, 'http://www.bom.gov.au/');
-   curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-   if( ($file = curl_exec($ch) ) === false) {
-    //echo "curl fetch failure";
-    return null;
-   } else {
-    file_put_contents($cache_file, $file, LOCK_EX);
-   }
-  }
-  /* Perform some cache maintenance every so often */
-  if (rand(0,100) < 4) {
-   cache_cleanup();
-  }
-  return [ $file, $mode ];
- };
+function getStatesToFetch($stateParam) {
+    global $STATE_MAP;
+    $statesToFetch = [];
+    if ($stateParam === 'ALL') {
+        $statesToFetch = array_keys($STATE_MAP);
+    } elseif ($stateParam === 'ACT') {
+        $statesToFetch = ['NSW'];
+    } elseif (isset($STATE_MAP[$stateParam])) {
+        $statesToFetch = [$stateParam];
+    } elseif (in_array($stateParam, $STATE_MAP)) {
+        $statesToFetch = [array_search($stateParam, $STATE_MAP)];
+    }
+    return $statesToFetch;
+}
 
- function get_weather($bom_id, $bom_wmo) {
-  if (is_null($bom_id) || $bom_id == '')
-   return null;
-  if (is_null($bom_wmo) || $bom_wmo == '')
-   return null;
-  $bom = weather_request($bom_id, $bom_wmo);
-  if (is_null($bom)) {
-   return null;
-  }
-  $bom_json = json_decode($bom[0], true);
-  $myObj = json_decode('{}');
-  $myObj->copyright = $bom_json["observations"]["notice"][0]["copyright"];
-  $myObj->refresh_message = $bom_json["observations"]["header"][0]["refresh_message"];
-  $myObj->name = $bom_json["observations"]["header"][0]["name"];
-  $myObj->wind_spd_kmh = $bom_json["observations"]["data"][0]["wind_spd_kmh"];
-  $myObj->gust_kmh = $bom_json["observations"]["data"][0]["gust_kmh"];
-  $myObj->air_temp= $bom_json["observations"]["data"][0]["air_temp"];
-  $myObj->mm_rain_since_9am= $bom_json["observations"]["data"][0]["rain_trace"];
-  $myObj->local_date_time = $bom_json["observations"]["data"][0]["local_date_time"];
-  $myObj->retrieval_mode = $bom[1];
-  return $myObj;
- };
+function extractJsonFromTgz($tgzFile, $stateAbbrev, $lastFetched) {
+    $data = [];
 
- // Testing
- //$weather = get_weather('IDN60801','94927');
- //echo json_encode($weather);
+    // Create a unique temporary directory for extraction
+    $tempDir = sys_get_temp_dir() . '/bom_tmp_' . bin2hex(random_bytes(4));
+    mkdir($tempDir);
+    $tempTgz = "$tempDir/source.tgz";
+    copy($tgzFile, $tempTgz);
+
+    try {
+        $phar = new PharData($tempTgz);
+        $phar->decompress(); // creates source.tar inside $tempDir
+        $tarPath = "$tempDir/source.tar";
+
+        if (!file_exists($tarPath)) {
+            throw new Exception("Failed to decompress $tempTgz");
+        }
+
+        $tar = new PharData($tarPath);
+        $iterator = new RecursiveIteratorIterator($tar);
+
+        foreach ($iterator as $file) {
+            $name = $file->getFilename();
+            if (substr($name, -5) === '.json') {
+                $content = file_get_contents($file->getPathname());
+                $json = json_decode($content, true);
+                if (!$json || empty($json['observations']['data'])) continue;
+
+                $header = $json['observations']['header'][0] ?? [];
+                foreach ($json['observations']['data'] as $obs) {
+                    if (($obs['sort_order'] ?? 1) == 0) {
+                        $data[] = [
+                            'state_abbrev' => $stateAbbrev,
+                            'state' => $header['state'] ?? '',
+                            'copyright' => $json['observations']['notice'][0]['copyright'] ?? '',
+                            'id' => $header['ID'] ?? '',
+                            'name' => $header['name'] ?? '',
+                            'wmo_id' => $header['wmo_id'] ?? '',
+                            'aifstime_utc' => humaniseTime($obs['aifstime_utc']) ?? '',
+                            'refresh_message' => humaniseTime($obs['aifstime_local']) ?? '',
+                            'lat' => (float)($obs['lat'] ?? 0),
+                            'lon' => (float)($obs['lon'] ?? 0),
+                            'gust_kmh' => $obs['gust_kmh'] ?? null,
+                            'wind_spd_kmh' => $obs['wind_spd_kmh'] ?? null,
+                            'air_temp' => $obs['air_temp'] ?? null,
+                            'apparent_temp' => $obs['apparent_t'] ?? null,
+                            'mm_rain_since_9am' => $obs['rain_trace'] ?? null,
+                            'last_poll' => date('c', $lastFetched),
+                            'retrieval_mode' => 'Intelligent Fetch/Cache'
+                        ];
+                        break;
+                    }
+                }
+            }
+        }
+
+    } catch (Exception $e) {
+        error_log("extractJsonFromTgz error: " . $e->getMessage());
+    }
+
+    // Cleanup
+    foreach (glob("$tempDir/*") as $f) @unlink($f);
+    @rmdir($tempDir);
+
+    return $data;
+}
+
+function getRemoteFileMtime($ftpUrl) {
+    $parts = parse_url($ftpUrl);
+    $conn = @ftp_connect($parts['host'], 21, 10);
+    if (!$conn) return false;
+    if (!@ftp_login($conn, 'anonymous', '')) {
+        ftp_close($conn);
+        return false;
+    }
+    $mtime = ftp_mdtm($conn, ltrim($parts['path'], '/'));
+    ftp_close($conn);
+    return ($mtime !== -1) ? $mtime : false;
+}
+
+function downloadWithCache($ftpUrl, $localTgz, $lockFile, $cacheTtl) {
+    $now = time();
+    $localExists = file_exists($localTgz);
+    $localAge = $localExists ? $now - filemtime($localTgz) : PHP_INT_MAX;
+    $indexFile = $localTgz . '.index';
+
+    if ($localAge < $cacheTtl) return $localTgz;
+
+    $fpLock = fopen($lockFile, 'c');
+    if (!$fpLock) return false;
+
+    if (!flock($fpLock, LOCK_EX)) {
+        fclose($fpLock);
+        return false;
+    }
+
+    // Recheck within lock
+    $localExists = file_exists($localTgz);
+    $localAge = $localExists ? $now - filemtime($localTgz) : PHP_INT_MAX;
+    if ($localAge < $cacheTtl) {
+        flock($fpLock, LOCK_UN);
+        fclose($fpLock);
+        return $localTgz;
+    }
+
+    $remoteMtime = getRemoteFileMtime($ftpUrl);
+    $lastSeen = file_exists($indexFile) ? (int)file_get_contents($indexFile) : 0;
+
+    if ($remoteMtime !== false && $remoteMtime > $lastSeen) {
+        $data = @file_get_contents($ftpUrl);
+        if ($data !== false) file_put_contents($localTgz, $data);
+        file_put_contents($indexFile, $remoteMtime);
+    } elseif ($remoteMtime === false && $localExists) {
+        touch($localTgz);
+    } else {
+        if ($localExists) touch($localTgz);
+    }
+
+    flock($fpLock, LOCK_UN);
+    fclose($fpLock);
+
+    return file_exists($localTgz) ? $localTgz : false;
+}
+
+// --- MAIN ---
+function get_weather($statesToFetch, $wmoFilter) {
+    global $STATE_MAP, $FTP_BASE, $CACHE_DIR, $CACHE_TTL;
+    $allData = [];
+
+    foreach ($statesToFetch as $state) {
+        $productId = $STATE_MAP[$state] ?? '';
+        if ($productId === '') continue;
+
+        $ftpUrl = $FTP_BASE . $productId . '.tgz';
+        $localTgz = "$CACHE_DIR/{$productId}.tgz";
+        $lockFile = "$CACHE_DIR/{$productId}.lock";
+
+        $tgzFile = downloadWithCache($ftpUrl, $localTgz, $lockFile, $CACHE_TTL);
+        if (!$tgzFile) continue;
+
+        $lastFetched = filemtime($tgzFile);
+        $stateData = extractJsonFromTgz($tgzFile, $state, $lastFetched);
+        $allData = array_merge($allData, $stateData);
+    }
+
+    if ($wmoFilter) {
+        $allData = array_values(array_filter($allData, fn($d) => $d['wmo_id'] == $wmoFilter));
+    }
+
+    $geojson = [
+        'type' => 'FeatureCollection',
+        'features' => array_map(fn($obs) => [
+            'type' => 'Feature',
+            'geometry' => [
+                'type' => 'Point',
+                'coordinates' => [$obs['lon'], $obs['lat']]
+            ],
+            'properties' => $obs
+        ], $allData)
+    ];
+
+    return $geojson;
+}
 
 ?>
+

@@ -11,21 +11,21 @@
 Client Installation and Build involves building and configuring your Raspberry Pi cameras.
 You can build multiple Raspberry Pi cameras to use a single Server SYSTEM.  The core
 steps are;
- <ol class="h4">
-  <li>Optionally Download Raspberry Pi OS Image</li>
-  <li>Burn Image to micro SD card - <em>with optional manual headless setup</em></li>
-  <li>Log In (ssh) to your Pi</li>
-  <li>Set up hostname and timezone - <em>if not already done</em></li>
-  <li>Install dependent packages</li>
-  <li>Install client side programs for this application</li>
-  <li>Setup watchdog</li>
-  <li>Configure config.ini</li>
-  <li>Setup crontab</li>
-  <li>Reboot and Finish</li>
-  <li>Appendix 1 - Manual Headless Setup</li>
-  <li>Appendix 2 - Auxiliary client programs</li>
- </ol>
 </p>
+<ol class="h4">
+ <li>Optionally Download Raspberry Pi OS Image</li>
+ <li>Burn Image to micro SD card - <em>with optional manual headless setup</em></li>
+ <li>Log In (ssh) to your Pi</li>
+ <li>Set up hostname and timezone - <em>if not already done</em></li>
+ <li>Install dependent packages</li>
+ <li>Install client side programs for this application</li>
+ <li>Setup watchdog</li>
+ <li>Configure config.ini</li>
+ <li>Setup crontab</li>
+ <li>Reboot and Finish</li>
+ <li>Appendix 1 - Manual Headless Setup</li>
+ <li>Appendix 2 - Auxiliary client programs</li>
+</ol>
 
 <h4>Optionally Download Raspberry Pi OS Image</h4>
 <p>
@@ -38,6 +38,7 @@ then a "Lite" version of the OS is recommended.  The following client side
 instructions in this page have been tested and verified to work correctly using 
 "Raspberry Pi OS (Legacy) Lite" against a Raspberry Pi Zero W using the
  July 4th 2024 release.  Namely;
+</p>
 <pre>
 Raspberry Pi OS (Legacy) Lite
 Release date: July 4th 2024
@@ -45,16 +46,14 @@ System: 32-bit
 Kernel version: 6.1
 Debian version: 11 (bullseye)
 </pre>
-</p>
-
 
 <h4>Burn Image to micro SD card - <em>with optional manual headless setup</em></h4>
-<p>
 For most cases, you might find the Raspberry Pi Imager the easiest way to
 burn your OS Image to your micro SD card for use in your Pi.  You may need to
 download and install that Imager.  The Raspberry Pi Imager 
 allows the following to be preconfigured using the <span class="mono"><em>SETTINGS</em></span> 
 tab in the Imager;
+
 <ul>
  <li>Hostname</li>
  <li>Username and password</li>
@@ -80,10 +79,8 @@ In such cases, if you will be doing a full manual burn of your OS image, please 
 <a href="#appendix-1">Appendix 1 - Manual Headless Setup</a> section below.
 Some of the continued instructions below will assume you have done a full manual burn of your 
 OS Image to your Pi and as such they may be able to skipped if you have used the Raspberry Pi Imager.
-</p>
 
 <h4>Log In (ssh) to your Pi</h4>
-<p>
 Once you have placed the micro SD card in your Pi, power it up, wait 1 minute, then connect to
 it using your favourite ssh client (such as <b>putty</b>).  You may need to download the
 putty application if you have not connected to a Pi previously.  If you have used the 
@@ -97,7 +94,6 @@ you have trouble here.
 <br><br>
 Once logged on, by entering your username and password, you should have the 
 familiar <span class="mono" style="color:blue;">$_</span> terminal prompt displayed.
-</p>
 
 <h4>Set up hostname and timezone - <em>if not already done</em></h4>
 
@@ -146,10 +142,12 @@ issue the following commands;
 
 <h4>Install client side programs for this application</h4>
 
-Using whichever method you are comfortable with (such as <b>git clone</b>, <b>wget</b> or <b>secure copy</b>),
-copy all the files from the code base repository <span class="mono"><b>client</b></span> subdirectory to your 
-Raspberry Pi.  If you have never copied files to a Raspberry Pi before - consider to use the <b>secure copy</b>
-or <b>scp</b> facility that comes with <b>putty</b>.<br><br>
+Using whichever method you are comfortable with (such as <b>git clone</b>, 
+ <b>wget</b> or <b>secure copy</b>),
+copy all the files from the code base repository <span class="mono"><b>client</b></span> 
+ subdirectory to your 
+Raspberry Pi.  If you have never copied files to a Raspberry Pi before - consider to use the 
+ <b>secure copy</b> or <b>scp</b> facility that comes with <b>putty</b>.<br><br>
 Eg, copy the files from this location to your Raspberry Pi home directory;<br><br>
 <span class="mono"><em>https://github.com/harrishudson/VisionSphere</em> &rarr; 
 <em>client</em></span><br><br>
@@ -167,7 +165,6 @@ These are the files that should be copied to your Pi;
  <li>ping_reboot.py</li>
  <li>resolutions.py</li>
 </ul>
-
 
 <h4>Setup watchdog</h4>
 This step is optional.  For this motion detect application, there may be a high
@@ -201,7 +198,6 @@ Now, once your Pi reboots, the watchdog daemon should be configured correctly to
 and automatically reboot your Pi should it become locked up.  To test this watchdog facility, 
 refer to the <span class="mono">bomb.py</span> test program under 
 <a href="#appendix-2">Appendix 2 - Auxiliary client programs</a> section below.
-
 
 <h4>Configure config.ini</h4>
 
@@ -361,12 +357,9 @@ Make the following changes as required;
   </dl>
  </li>
 </ul>
-</p>
-
 
 <h4>Setup crontab</h4>
 
-<p>
 One of the final steps is to configure your Pi crontab entry.  If you are unfamiliar, cron
 is the Linux job scheduler and a crontab file is provided in the code base.  
 Issue the following commands;
@@ -403,17 +396,14 @@ A line-by-line description of this crontab is;
 </ol>
 
 <h4>Reboot and Finish</h4>
-<p>
 This concludes the general setup of a client Raspberry Pi configured for motion detection.
 The final step is to reboot the Pi and then future control would be from the received emails
 and web portal for this application.  Issue the following command;
 <br><br>
 <span class="mono"><span style="color:blue;">$ </span>sudo reboot</span>
 <br><br>
-</p>
 
 <hr>
-
 
 <h4>Appendix 1 - Manual Headless Setup</h4>
 <p id="appendix-1">
@@ -423,7 +413,8 @@ perhaps less commonly used now with the introduction of the <b>Raspberry Pi Imag
 However, there may be some cases where the Raspberry Pi Imager is perhaps not suited,
 so it is described here.  Instructions here are very brief and you may need to consult
 other resources if you require more detail.
-<br><br>
+</p>
+<br>
 Download a Raspberry Pi OS (Legacy) Lite image.
 <br><br>
 Eg; 2024-07-04-raspios-bullseye-armhf-lite.img.xz
@@ -462,11 +453,11 @@ network={
  scan_ssid=1
 }</pre>
 
-Here the first <span class="mono">network</span> entry contains empty strings for <span class="mono">ssid</span>
- and <span class="mono">psk</span> - you need to populate
+Here the first <span class="mono">network</span> entry contains empty strings for 
+ <span class="mono">ssid</span> and <span class="mono">psk</span> - you need to populate
 these with your Wifi SSID name and Wifi password respectively.  The second 
- <span class="mono">network</span> entry will
-allow your Pi to connect to password-less Wifi networks should that be available - if you do not want 
+ <span class="mono">network</span> entry will allow your Pi to connect to password-less 
+ Wifi networks should that be available - if you do not want 
 that then remove that second <span class="mono">network</span> entry in its entirety.
 <br><br>
 For example; suppose your Wifi network SSID is <span style="color:blue">Batman</span> and your
@@ -523,13 +514,13 @@ This concludes the Headless build.  Once you have completed the above steps by b
 copying these three files, you can then eject your SD card and insert it in to your Pi.  Power up
 your Pi then wait 1 minute for it to boot, then attempt to ssh (login) to your Pi by connecting
 to a host called <span class="mono"><b>raspberrypi</b></span> on your local Wifi network.  
-</p>
 
 <h4>Appendix 2 - Auxiliary client programs</h4>
 <p id="appendix-2">
 As part of your client build, there are some auxiliary python files included that are not used
 in the normal camera motion detection operation.  Instead, these files are provided for assistance in
 testing and checking various configurations.
+</p>
 <h5>bomb.py</h5>
 This is a very simple python script that will endlessly fork subprocesses.  It is designed to
 deliberately crash and lock up your Pi.  This script is provided to help you test the 
@@ -553,6 +544,5 @@ Eg, to list camera resolution sizes available on your Pi, run;
 <br><br>
 <em>Note: you may need to make sure the motion detection is not running when executing 
 <span class="mono">resoltuions.py</span> and temporarily disable your crontab entries.</em>
-</p>
 
 <?php page_bottom(true);  ?>

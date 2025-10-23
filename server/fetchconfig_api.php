@@ -18,7 +18,8 @@
    return json_decode('{}');
   };
   try {
-   return get_weather($bom_id, $bom_wmo);
+   $geojson = get_weather([ $bom_id ], $bom_wmo);
+   return $geojson['features'][0]['properties'];  // Return properties for first station
    }
   catch (Exception $e) {
    return json_decode('{}');

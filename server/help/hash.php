@@ -40,7 +40,8 @@ and ideally more like 20 to 30 characters in length.
 </p>
 
 <form action="hash.php" method="POST">
- <input id="text" name="TEXT" value="{$TEXT}" placeholder="Auth Key / Password (Plain Text)" style="width:250px"/>
+ <input id="text" name="TEXT" value="{$TEXT}"
+  placeholder="Auth Key / Password (Plain Text)" style="width:250px">
  <input type="submit" value="Go">
  <button id="random">Random</button>
 </form>
@@ -53,7 +54,7 @@ EOF;
   $salt = substr(str_replace('+', '.', base64_encode(random_bytes(1))), 0, 2);
   $pass = escHTML(crypt($TEXT, $salt));
   echo <<<EOF
-  <p>
+  <br>
   Auth Key / Password;
   <dl>
    <dt>Plain Text</dt>
@@ -63,7 +64,6 @@ EOF;
    <dt>Linux Crypt Hash</dt>
    <dd class="result">{$pass}</dd>
   </dl>
-  </p>
 EOF;
  };
 

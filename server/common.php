@@ -41,6 +41,9 @@
  };
 
  function check_auth($password) {
+  if ((!isset($password)) || ($password == ''))  {
+   return false;
+  }
   $config = parse_ini_file('./conf/config.ini', true);
   $current_hash = $config['AUTHENTICATION']['AUTH_KEY_HASH'];
   return (password_verify($password, $current_hash));
@@ -65,11 +68,17 @@
   return $cams;
  }
 
- function page_style() {
-  $style =<<<EOF
+ function page_style($is_fullscreen = false) {
+  if ($is_fullscreen) {
+   $style =<<<EOF
 body { 
  font-family: Arial, Helvetica, sans-serif; 
- max-width: 1200px;
+}
+EOF;
+  } else {
+   $style =<<<EOF
+body { 
+ font-family: Arial, Helvetica, sans-serif; 
 }
 input[type="submit"], button, .btn {
  border: 1px solid white;
@@ -146,6 +155,7 @@ dl.obs dd {
  font-family: monospace;
 }
 EOF;
+  };
   return $style;
  };
 
@@ -157,11 +167,11 @@ EOF;
   return $home;
  };
 
- function page_top($is_subdir = false) {
+ function page_top($is_subdir = false, $is_fullscreen = false) {
   $home = get_home($is_subdir);
   $config = parse_ini_file($home.'/conf/config.ini', true);
   $app_name = escHTML($config['APPLICATION']['NAME']);
-  $style = page_style();
+  $style = page_style($is_fullscreen);
   echo <<<EOF
 <!DOCTYPE html>
 <html lang="en">
@@ -169,7 +179,19 @@ EOF;
  <title>{$app_name}</title>
  <meta name="author" content="Harris Hudson. harris@harrishudson.com">
  <meta id="application-name" name="application-name" content="{$app_name}">
+EOF;
+ if ($is_fullscreen) {
+  echo <<<EOF
+ <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+ <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+ <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+EOF;
+ } else {
+  echo <<<EOF
  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes">
+EOF;
+ }
+ echo <<<EOF
  <meta charset="UTF-8">
  <link rel="icon" href="{$home}/favicon.svg">
  <style>
@@ -236,16 +258,28 @@ ul.status>li {
  </script>
 </head>
 <body>
+EOF;
+ if (! $is_fullscreen) {
+  echo <<<EOF
 <h1>{$app_name}</h1>
 EOF;
  };
+ };
 
- function page_bottom($is_subdir = false) {
+ function page_bottom($is_subdir = false, $is_fullscreen = false) {
   $home = get_home($is_subdir);
+  if ($is_fullscreen) {
+   echo <<<EOF
+ <a href="{$home}" style="position:absolute; left: 20px; bottom: 20px; z-index:9999">Home</a>
+EOF;
+   } else {
   echo <<<EOF
 <p>
  <a href="{$home}">Home</a>
 </p>
+EOF;
+  };
+  echo <<<EOF
  <ul id="status_queue" class="status"></ul>
 </body>
 </html>

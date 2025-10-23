@@ -155,7 +155,7 @@ EOF;
   <dd>{$score_threshold}</dd>
   <dt>This Image Trigger Noise Value</dt>
   <dd>{$score}</dd>
-  <dt>BOM Station ID Setting</dt>
+  <dt>BOM Station State ID Setting</dt>
   <dd>{$bom_id}</dd>
   <dt>BOM Station WMO Setting</dt>
   <dd>{$bom_wmo}</dd>

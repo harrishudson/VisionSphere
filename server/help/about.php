@@ -8,7 +8,6 @@
 <h2>About</h2>
 
 <h4>Privacy Policy</h4>
-<p>
 <ul>
  <li>Only standard web logging information will be recorded about your visit to this website.  That includes;      
      your IP address, URL requested, datetime of your request, size of the response and possibly any optional 
@@ -23,11 +22,10 @@
      recorded and then transferred to your server to be ultimately sent on by email.  No Imagery files, 
      permanent or temporary, are stored on your server.</li>
 </ul>
-</p>
 
 <h4>Author</h4>
 <p>
-Harris Hudson &copy; 2024
+Harris Hudson &copy; 2025
 </p>
 
 <h4>Code Repository</h4>
