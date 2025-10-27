@@ -26,6 +26,40 @@ $STATE_MAP = [
     'IDD60910' => 'IDD60910'
 ];
 
+function cleanup_old_temp_dirs() {
+    $baseDir = sys_get_temp_dir();
+    $pattern = $baseDir . '/bom_tmp_*';
+    $maxAge = 3 * 24 * 60 * 60; // 3 days in seconds
+    $now = time();
+
+    foreach (glob($pattern, GLOB_ONLYDIR) as $dir) {
+        $lastModified = filemtime($dir);
+        if ($lastModified !== false && ($now - $lastModified) > $maxAge) {
+            delete_directory_recursive($dir);
+        }
+    }
+}
+
+function delete_directory_recursive($dir) {
+    if (!is_dir($dir)) {
+        return;
+    }
+
+    $items = scandir($dir);
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+            continue;
+        }
+        $path = $dir . DIRECTORY_SEPARATOR . $item;
+        if (is_dir($path)) {
+            delete_directory_recursive($path);
+        } else {
+            @unlink($path);
+        }
+    }
+    @rmdir($dir);
+}
+
 function humaniseTime($timestamp) {
     $dt = DateTime::createFromFormat('YmdHis', $timestamp);
     return $dt ? $dt->format('l, F j, Y g:i A') : '';
@@ -183,6 +217,11 @@ function downloadWithCache($ftpUrl, $localTgz, $lockFile, $cacheTtl) {
 function get_weather($statesToFetch, $wmoFilter) {
     global $STATE_MAP, $FTP_BASE, $CACHE_DIR, $CACHE_TTL;
     $allData = [];
+
+    // Remove any left over cache files
+    if (mt_rand(0, 30) === 0) {  // ~1 in 30 chance
+        cleanup_old_temp_dirs();
+    };
 
     foreach ($statesToFetch as $state) {
         $productId = $STATE_MAP[$state] ?? '';
