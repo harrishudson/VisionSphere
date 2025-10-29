@@ -26,38 +26,35 @@ $STATE_MAP = [
     'IDD60910' => 'IDD60910'
 ];
 
+// --- SAFE TEMP CLEANUP ---
+// Cleans up only /tmp/bom_tmp_* dirs older than 3 days.
 function cleanup_old_temp_dirs() {
     $baseDir = sys_get_temp_dir();
     $pattern = $baseDir . '/bom_tmp_*';
-    $maxAge = 3 * 24 * 60 * 60; // 3 days in seconds
+    $maxAge = 3 * 24 * 60 * 60; // 3 days
     $now = time();
 
     foreach (glob($pattern, GLOB_ONLYDIR) as $dir) {
         $lastModified = filemtime($dir);
         if ($lastModified !== false && ($now - $lastModified) > $maxAge) {
-            delete_directory_recursive($dir);
+            try {
+                $it = new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS);
+                $files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
+                foreach ($files as $file) {
+                    $path = $file->getPathname();
+                    if ($file->isDir()) {
+                        @rmdir($path);
+                    } else {
+                        @unlink($path);
+                    }
+                }
+                @rmdir($dir);
+            } catch (Exception $e) {
+                // Optional: log cleanup errors if needed
+                // error_log("Cleanup failed for $dir: " . $e->getMessage());
+            }
         }
     }
-}
-
-function delete_directory_recursive($dir) {
-    if (!is_dir($dir)) {
-        return;
-    }
-
-    $items = scandir($dir);
-    foreach ($items as $item) {
-        if ($item === '.' || $item === '..') {
-            continue;
-        }
-        $path = $dir . DIRECTORY_SEPARATOR . $item;
-        if (is_dir($path)) {
-            delete_directory_recursive($path);
-        } else {
-            @unlink($path);
-        }
-    }
-    @rmdir($dir);
 }
 
 function humaniseTime($timestamp) {
@@ -146,10 +143,10 @@ function extractJsonFromTgz($tgzFile, $stateAbbrev, $lastFetched) {
         }
 
     } catch (Exception $e) {
-        error_log("extractJsonFromTgz error: " . $e->getMessage());
+        // error_log("extractJsonFromTgz error: " . $e->getMessage());
     }
 
-    // Cleanup
+    // Cleanup this temp dir only
     foreach (glob("$tempDir/*") as $f) @unlink($f);
     @rmdir($tempDir);
 
@@ -218,10 +215,10 @@ function get_weather($statesToFetch, $wmoFilter) {
     global $STATE_MAP, $FTP_BASE, $CACHE_DIR, $CACHE_TTL;
     $allData = [];
 
-    // Remove any left over cache files
-    if (mt_rand(0, 30) === 0) {  // ~1 in 30 chance
+    // Random cleanup trigger (~1 in 30 runs)
+    if (mt_rand(0, 30) === 0) {
         cleanup_old_temp_dirs();
-    };
+    }
 
     foreach ($statesToFetch as $state) {
         $productId = $STATE_MAP[$state] ?? '';
@@ -259,4 +256,3 @@ function get_weather($statesToFetch, $wmoFilter) {
 }
 
 ?>
-
