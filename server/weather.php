@@ -1,13 +1,11 @@
 <?php
-
 date_default_timezone_set('Australia/Sydney');
-
 // error_reporting(E_ALL);
 // ini_set('display_errors', 1);
 
-$CACHE_DIR = __DIR__ . '/cache';
+$CACHE_DIR = __DIR__ . '/cache'; 
 if (!file_exists($CACHE_DIR)) mkdir($CACHE_DIR, 0777, true);
-$CACHE_TTL = 240; // 4 minutes
+$CACHE_TTL = 180; // 3 minutes
 $FTP_BASE = 'ftp://ftp.bom.gov.au/anon/gen/fwo/';
 $STATE_MAP = [
     'NSW' => 'IDN60910',
@@ -26,133 +24,88 @@ $STATE_MAP = [
     'IDD60910' => 'IDD60910'
 ];
 
-// --- SAFE TEMP CLEANUP ---
-// Cleans up only /tmp/bom_tmp_* dirs older than 3 days.
-function cleanup_old_temp_dirs() {
-    $baseDir = sys_get_temp_dir();
-    $pattern = $baseDir . '/bom_tmp_*';
-    $maxAge = 3 * 24 * 60 * 60; // 3 days
-    $now = time();
-
-    foreach (glob($pattern, GLOB_ONLYDIR) as $dir) {
-        $lastModified = filemtime($dir);
-        if ($lastModified !== false && ($now - $lastModified) > $maxAge) {
-            try {
-                $it = new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS);
-                $files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
-                foreach ($files as $file) {
-                    $path = $file->getPathname();
-                    if ($file->isDir()) {
-                        @rmdir($path);
-                    } else {
-                        @unlink($path);
-                    }
-                }
-                @rmdir($dir);
-            } catch (Exception $e) {
-                // Optional: log cleanup errors if needed
-                // error_log("Cleanup failed for $dir: " . $e->getMessage());
-            }
-        }
-    }
-}
-
 function humaniseTime($timestamp) {
     $dt = DateTime::createFromFormat('YmdHis', $timestamp);
     return $dt ? $dt->format('l, F j, Y g:i A') : '';
-}
+};
 
-function validate_states($stateParam) {
-    global $STATE_MAP;
-    if ($stateParam !== 'ALL' && $stateParam !== 'ACT' &&
-        !isset($STATE_MAP[$stateParam]) && !in_array($stateParam, $STATE_MAP)) {
-        return false;
-    }
-    return true;
-}
+// --- HELPER FUNCTIONS ---
 
-function getStatesToFetch($stateParam) {
-    global $STATE_MAP;
-    $statesToFetch = [];
-    if ($stateParam === 'ALL') {
-        $statesToFetch = array_keys($STATE_MAP);
-    } elseif ($stateParam === 'ACT') {
-        $statesToFetch = ['NSW'];
-    } elseif (isset($STATE_MAP[$stateParam])) {
-        $statesToFetch = [$stateParam];
-    } elseif (in_array($stateParam, $STATE_MAP)) {
-        $statesToFetch = [array_search($stateParam, $STATE_MAP)];
-    }
-    return $statesToFetch;
-}
-
+/**
+ * Extracts observation records from a local .tgz file entirely in memory.
+ * Decodes the gzip stream and loops over the 512-byte tar architecture layout.
+ */
 function extractJsonFromTgz($tgzFile, $stateAbbrev, $lastFetched) {
     $data = [];
 
-    // Create a unique temporary directory for extraction
-    $tempDir = sys_get_temp_dir() . '/bom_tmp_' . bin2hex(random_bytes(4));
-    mkdir($tempDir);
-    $tempTgz = "$tempDir/source.tgz";
-    copy($tgzFile, $tempTgz);
+    $compressedData = @file_get_contents($tgzFile);
+    if (!$compressedData) return $data;
 
-    try {
-        $phar = new PharData($tempTgz);
-        $phar->decompress(); // creates source.tar inside $tempDir
-        $tarPath = "$tempDir/source.tar";
+    // Decompress the gzip stream straight into memory
+    $tarData = @gzdecode($compressedData);
+    if (!$tarData) return $data;
 
-        if (!file_exists($tarPath)) {
-            throw new Exception("Failed to decompress $tempTgz");
+    $offset = 0;
+    $tarLength = strlen($tarData);
+
+    // Parse the in-memory tar stream block by block (512 bytes per block)
+    while ($offset + 512 <= $tarLength) {
+        $header = substr($tarData, $offset, 512);
+        
+        // A block composed entirely of null bytes indicates the end of the tar archive
+        if (trim($header, "\0") === '') {
+            break;
         }
 
-        $tar = new PharData($tarPath);
-        $iterator = new RecursiveIteratorIterator($tar);
+        // Target file metadata records inside the header structure
+        $filename = trim(substr($header, 0, 100), "\0");
+        $sizeOctal = trim(substr($header, 124, 12), "\0 ");
+        $size = octdec($sizeOctal); // Convert octal tar size to decimal bytes
 
-        foreach ($iterator as $file) {
-            $name = $file->getFilename();
-            if (substr($name, -5) === '.json') {
-                $content = file_get_contents($file->getPathname());
+        $offset += 512; // Advance past the header block
+
+        if ($size > 0) {
+            if (substr($filename, -5) === '.json') {
+                $content = substr($tarData, $offset, $size);
                 $json = json_decode($content, true);
-                if (!$json || empty($json['observations']['data'])) continue;
-
-                $header = $json['observations']['header'][0] ?? [];
-                foreach ($json['observations']['data'] as $obs) {
-                    if (($obs['sort_order'] ?? 1) == 0) {
-                        $data[] = [
-                            'state_abbrev' => $stateAbbrev,
-                            'state' => $header['state'] ?? '',
-                            'copyright' => $json['observations']['notice'][0]['copyright'] ?? '',
-                            'id' => $header['ID'] ?? '',
-                            'name' => $header['name'] ?? '',
-                            'wmo_id' => $header['wmo_id'] ?? '',
-                            'aifstime_utc' => humaniseTime($obs['aifstime_utc']) ?? '',
-                            'refresh_message' => humaniseTime($obs['aifstime_local']) ?? '',
-                            'lat' => (float)($obs['lat'] ?? 0),
-                            'lon' => (float)($obs['lon'] ?? 0),
-                            'gust_kmh' => $obs['gust_kmh'] ?? null,
-                            'wind_spd_kmh' => $obs['wind_spd_kmh'] ?? null,
-                            'air_temp' => $obs['air_temp'] ?? null,
-                            'apparent_temp' => $obs['apparent_t'] ?? null,
-                            'mm_rain_since_9am' => $obs['rain_trace'] ?? null,
-                            'last_poll' => date('c', $lastFetched),
-                            'retrieval_mode' => 'Intelligent Fetch/Cache'
-                        ];
-                        break;
+                
+                if ($json && !empty($json['observations']['data'])) {
+                    $headerData = $json['observations']['header'][0] ?? [];
+                    foreach ($json['observations']['data'] as $obs) {
+                        if (($obs['sort_order'] ?? 1) == 0) {
+                            $data[] = [
+                                'state_abbrev'   => $stateAbbrev,
+                                'state'          => $headerData['state'] ?? '',
+                                'copyright'      => $json['observations']['notice'][0]['copyright'] ?? '',
+                                'id'             => $headerData['ID'] ?? '',
+                                'name'           => $headerData['name'] ?? '',
+                                'wmo_id'         => $headerData['wmo_id'] ?? '',
+                                'aifstime_utc'   => humaniseTime($obs['aifstime_utc']) ?? '',
+                                'refresh_message' => humaniseTime($obs['aifstime_local']) ?? '',
+                                'lat'            => (float)($obs['lat'] ?? 0),
+                                'lon'            => (float)($obs['lon'] ?? 0),
+                                'gust_kmh'       => $obs['gust_kmh'] ?? null,
+                                'wind_spd_kmh'   => $obs['wind_spd_kmh'] ?? null,
+                                'air_temp'       => $obs['air_temp'] ?? null,
+                                'apparent_temp'  => $obs['apparent_t'] ?? null,
+                                'mm_rain_since_9am' => $obs['rain_trace'] ?? null,
+                                'last_poll'   => date('c', $lastFetched),
+                                'retrieval_mode' => 'Intelligent Fetch/Cache'
+                            ];
+                            break;
+                        }
                     }
                 }
             }
+            // Move pointer forward past file contents (padded out to the next 512-byte boundary)
+            $offset += ceil($size / 512) * 512;
         }
-
-    } catch (Exception $e) {
-        // error_log("extractJsonFromTgz error: " . $e->getMessage());
     }
-
-    // Cleanup this temp dir only
-    foreach (glob("$tempDir/*") as $f) @unlink($f);
-    @rmdir($tempDir);
 
     return $data;
 }
 
+// Returns the remote file's mtime via FTP, or false on any failure.
 function getRemoteFileMtime($ftpUrl) {
     $parts = parse_url($ftpUrl);
     $conn = @ftp_connect($parts['host'], 21, 10);
@@ -166,8 +119,10 @@ function getRemoteFileMtime($ftpUrl) {
     return ($mtime !== -1) ? $mtime : false;
 }
 
+// Ensures a local copy of the remote .tgz exists and is reasonably current.
 function downloadWithCache($ftpUrl, $localTgz, $lockFile, $cacheTtl) {
     $now = time();
+    clearstatcache(true, $localTgz);
     $localExists = file_exists($localTgz);
     $localAge = $localExists ? $now - filemtime($localTgz) : PHP_INT_MAX;
     $indexFile = $localTgz . '.index';
@@ -182,7 +137,8 @@ function downloadWithCache($ftpUrl, $localTgz, $lockFile, $cacheTtl) {
         return false;
     }
 
-    // Recheck within lock
+    // Double-check within lock
+    clearstatcache(true, $localTgz);
     $localExists = file_exists($localTgz);
     $localAge = $localExists ? $now - filemtime($localTgz) : PHP_INT_MAX;
     if ($localAge < $cacheTtl) {
@@ -192,16 +148,26 @@ function downloadWithCache($ftpUrl, $localTgz, $lockFile, $cacheTtl) {
     }
 
     $remoteMtime = getRemoteFileMtime($ftpUrl);
+    clearstatcache(true, $indexFile);
     $lastSeen = file_exists($indexFile) ? (int)file_get_contents($indexFile) : 0;
 
-    if ($remoteMtime !== false && $remoteMtime > $lastSeen) {
+    if (!$localExists || ($remoteMtime !== false && $remoteMtime > $lastSeen)) {
         $data = @file_get_contents($ftpUrl);
-        if ($data !== false) file_put_contents($localTgz, $data);
-        file_put_contents($indexFile, $remoteMtime);
+        if ($data !== false) {
+            file_put_contents($localTgz, $data);
+            clearstatcache(true, $localTgz);
+            
+            $indexTime = ($remoteMtime !== false) ? $remoteMtime : time();
+            file_put_contents($indexFile, $indexTime);
+        }
     } elseif ($remoteMtime === false && $localExists) {
         touch($localTgz);
+        clearstatcache(true, $localTgz);
     } else {
-        if ($localExists) touch($localTgz);
+        if ($localExists) {
+            touch($localTgz);
+            clearstatcache(true, $localTgz);
+        }
     }
 
     flock($fpLock, LOCK_UN);
@@ -210,15 +176,40 @@ function downloadWithCache($ftpUrl, $localTgz, $lockFile, $cacheTtl) {
     return file_exists($localTgz) ? $localTgz : false;
 }
 
+// Returns observation data for one state, using a JSON cache built from the local .tgz.
+function getStateDataWithJsonCache($tgzFile, $stateAbbrev, $cacheDir, $productId) {
+    $jsonCache = "$cacheDir/{$productId}.json";
+    $builtForFile = "$jsonCache.builtfor";
+    $indexFile = "$tgzFile.index";
+
+    clearstatcache(true, $indexFile);
+    $remoteMtime = file_exists($indexFile) ? (int)file_get_contents($indexFile) : 0;
+
+    clearstatcache(true, $builtForFile);
+    $jsonBuiltFor = file_exists($builtForFile) ? (int)file_get_contents($builtForFile) : 0;
+
+    if ($remoteMtime > 0 && $jsonBuiltFor >= $remoteMtime && file_exists($jsonCache)) {
+        $cached = json_decode(@file_get_contents($jsonCache), true);
+        if (is_array($cached)) {
+            return $cached;
+        }
+    }
+
+    clearstatcache(true, $tgzFile);
+    $tgzMtime = file_exists($tgzFile) ? filemtime($tgzFile) : time();
+    $data = extractJsonFromTgz($tgzFile, $stateAbbrev, $tgzMtime);
+    file_put_contents($jsonCache, json_encode($data));
+    file_put_contents($builtForFile, $remoteMtime);
+    clearstatcache(true, $jsonCache);
+    clearstatcache(true, $builtForFile);
+
+    return $data;
+}
+
 // --- MAIN ---
 function get_weather($statesToFetch, $wmoFilter) {
     global $STATE_MAP, $FTP_BASE, $CACHE_DIR, $CACHE_TTL;
     $allData = [];
-
-    // Random cleanup trigger (~1 in 30 runs)
-    if (mt_rand(0, 30) === 0) {
-        cleanup_old_temp_dirs();
-    }
 
     foreach ($statesToFetch as $state) {
         $productId = $STATE_MAP[$state] ?? '';
@@ -227,12 +218,11 @@ function get_weather($statesToFetch, $wmoFilter) {
         $ftpUrl = $FTP_BASE . $productId . '.tgz';
         $localTgz = "$CACHE_DIR/{$productId}.tgz";
         $lockFile = "$CACHE_DIR/{$productId}.lock";
-
+    
         $tgzFile = downloadWithCache($ftpUrl, $localTgz, $lockFile, $CACHE_TTL);
         if (!$tgzFile) continue;
 
-        $lastFetched = filemtime($tgzFile);
-        $stateData = extractJsonFromTgz($tgzFile, $state, $lastFetched);
+        $stateData = getStateDataWithJsonCache($tgzFile, $state, $CACHE_DIR, $productId);
         $allData = array_merge($allData, $stateData);
     }
 
@@ -252,6 +242,7 @@ function get_weather($statesToFetch, $wmoFilter) {
         ], $allData)
     ];
 
+    //return json_encode($geojson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     return $geojson;
 }
 
